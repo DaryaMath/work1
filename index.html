@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Файлы и папки — тренажёр 7 класс</title>
@@ -396,6 +397,9 @@
 </div>
 
 <script>
+const SUPABASE_URL = 'https://uynijkfphmqvfnzxwrrc.supabase.co/rest/v1/';
+const SUPABASE_ANON_KEY = 'sb_publishable__DwpBc_phMA01oT6682WMQ_vPd1pzuG';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 /* ============================================================
    ХРАНИЛИЩЕ
    ============================================================ */
@@ -792,8 +796,8 @@ $('tabTeacherReg').onclick = () => {
   $('teacherRegBlock').classList.remove('hidden'); $('teacherLoginBlock').classList.add('hidden');
 };
 
-function refreshTeacherLoginList() {
-  const teachers = getTeachers();
+async function refreshTeacherLoginList() {
+  const { data: teachers } = await supabase.from('teachers').select('id, name, login');
   const sel = $('teacherSelect');
   if (!sel) return;
   sel.innerHTML = '';
@@ -821,32 +825,34 @@ $('btnTheoryInTest').onclick = openTheory;
 $('btnTheoryTeacher').onclick = openTheory;
 
 /* ---------- РЕГИСТРАЦИЯ / ВХОД УЧИТЕЛЯ ---------- */
-$('btnTeacherReg').onclick = () => {
+$('btnTeacherReg').onclick = async () => {
   const name = $('rName').value.trim();
   const login = $('rLogin').value.trim().toLowerCase();
   const pass = $('rPass').value;
-  $('regErr').textContent = ''; $('regOk').textContent = '';
-  if (name.length < 2) { $('regErr').textContent = 'Введите ФИО учителя.'; return; }
-  if (!/^[a-z0-9_]{3,}$/.test(login)) { $('regErr').textContent = 'Логин: латиница/цифры, минимум 3 символа.'; return; }
-  if (pass.length < 3) { $('regErr').textContent = 'Пароль: минимум 3 символа.'; return; }
-  const teachers = getTeachers();
-  if (teachers.some(t => t.login === login)) { $('regErr').textContent = 'Такой логин уже занят.'; return; }
-  const t = { id: genId(), name, login, pass, created: new Date().toISOString() };
-  teachers.push(t);
-  saveTeachers(teachers);
-  $('regOk').textContent = `Аккаунт создан! Теперь войдите с логином «${login}».`;
-  $('rName').value = ''; $('rLogin').value = ''; $('rPass').value = '';
+  // ... валидация ...
+
+  const { data, error } = await supabase.from('teachers').insert({
+    id: genId(), name, login, pass
+  }).select();
+
+  if (error) {
+    $('regErr').textContent = error.message.includes('duplicate')
+      ? 'Такой логин уже занят.' : 'Ошибка: ' + error.message;
+    return;
+  }
+  $('regOk').textContent = `Аккаунт создан! Войдите с логином «${login}».`;
   refreshTeacherLoginList();
 };
 
-$('btnTeacherLogin').onclick = () => {
+$('btnTeacherLogin').onclick = async () => {
   const login = $('tLogin').value.trim().toLowerCase();
   const pass = $('tPass').value;
-  $('loginErrT').textContent = '';
-  const t = getTeachers().find(x => x.login === login && x.pass === pass);
-  if (!t) { $('loginErrT').textContent = 'Неверный логин или пароль.'; return; }
-  app.role = 'teacher';
-  app.teacher = t;
+
+  const { data, error } = await supabase.from('teachers')
+    .select('*').eq('login', login).eq('pass', pass).single();
+
+  if (error || !data) { $('loginErrT').textContent = 'Неверный логин или пароль.'; return; }
+  app.teacher = data;
   $('userBadge').classList.remove('hidden');
   $('userBadge').textContent = '👩‍🏫 ' + t.name;
   $('teacherWho').textContent = 'Учитель: ' + t.name + ' (логин: ' + t.login + ')';
@@ -1500,14 +1506,11 @@ function finishTest() {
 $('btnTestAgain').onclick = () => startTest();
 
 /* ---------- СОХРАНЕНИЕ ---------- */
-function saveResult(extra) {
+async function saveResult(extra) {
   if (!app.studentName || !app.studentTeacherId) return;
-  const all = getResults();
-  all.push({
-    teacherId: app.studentTeacherId,
-    teacherName: app.studentTeacherName || '',
-    name: app.studentName,
-    date: new Date().toISOString(),
+  const { error } = await supabase.from('results').insert({
+    teacher_id: app.studentTeacherId,
+    student_name: app.studentName,
     mode: extra.mode,
     score: extra.score,
     total: extra.total,
@@ -1515,20 +1518,25 @@ function saveResult(extra) {
     passed: extra.passed || null,
     answers: extra.answers
   });
-  saveResults(all);
+  if (error) console.error('Ошибка сохранения:', error);
 }
 
 /* ---------- УЧИТЕЛЬ ---------- */
 $('btnRefresh').onclick = renderTeacher;
-function renderTeacher() {
+async function renderTeacher() {
   if (!app.teacher) return;
-  const all = getResults();
-  const results = all.filter(r => r.teacherId === app.teacher.id);
-  if (results.length === 0) {
+  const { data: results, error } = await supabase.from('results')
+    .select('*')
+    .eq('teacher_id', app.teacher.id)
+    .order('created', { ascending: false });
+
+  if (error) { console.error(error); return; }
+  if (!results || results.length === 0) {
     $('teacherEmpty').classList.remove('hidden');
     $('teacherContent').classList.add('hidden');
     return;
   }
+ 
   $('teacherEmpty').classList.add('hidden');
   $('teacherContent').classList.remove('hidden');
 
@@ -1566,10 +1574,9 @@ function renderTeacher() {
   }).join('');
 }
 
-$('btnClearResults').onclick = () => {
-  if (!app.teacher) return;
+$('btnClearResults').onclick = async () => {
   if (!confirm('Удалить результаты только ВАШИХ учеников?')) return;
-  saveResults(getResults().filter(r => r.teacherId !== app.teacher.id));
+  await supabase.from('results').delete().eq('teacher_id', app.teacher.id);
   renderTeacher();
 };
 
