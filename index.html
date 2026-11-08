@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Файлы и папки — тренажёр 7 класс</title>
+<!-- Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 <style>
   * { box-sizing: border-box; }
   body {
@@ -135,7 +136,6 @@
 
   .inline-sim { border: 2px dashed #f39c12; border-radius: 12px; padding: 10px; margin-top: 12px; background: #fffbf0; }
 
-  /* Теория */
   .theory h3 { color: #1e3c72; margin: 18px 0 8px; font-size: 1.05rem; border-left: 4px solid #2a5298; padding-left: 8px; }
   .theory p { margin: 6px 0; line-height: 1.55; }
   .theory ul { margin: 6px 0 10px 22px; padding: 0; }
@@ -182,7 +182,7 @@
 
       <label>Ваш учитель</label>
       <div id="teacherPickWrap">
-        <select id="teacherSelect"></select>
+        <select id="teacherSelect"><option value="">Загрузка учителей...</option></select>
         <p class="muted" id="noTeachersMsg" style="margin-top:8px;display:none">
           Пока ни один учитель не зарегистрирован. Учитель должен сначала создать аккаунт на вкладке «Я учитель».
         </p>
@@ -397,29 +397,17 @@
 </div>
 
 <script>
-const SUPABASE_URL = 'https://uynijkfphmqvfnzxwrrc.supabase.co/rest/v1/';
-const SUPABASE_ANON_KEY = 'sb_publishable__DwpBc_phMA01oT6682WMQ_vPd1pzuG';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 /* ============================================================
-   ХРАНИЛИЩЕ
+   ПОДКЛЮЧЕНИЕ SUPABASE
    ============================================================ */
-const LS_TEACHERS = 'files_folders_teachers_v3';
-const LS_RESULTS  = 'files_folders_results_v3';
+const SUPABASE_URL = 'https://uynijkfphmqvfnzxwrrc.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV5bmlqa2ZwaG1xdmZuenh3cnJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQxNTM0NjksImV4cCI6MjEwOTcyOTQ2OX0.ET6Ews0SAIoM6BtkVK2-NC4QnQCGaMaoRiybkmDb53Y';
 
-const getTeachers = () => { try { return JSON.parse(localStorage.getItem(LS_TEACHERS)) || []; } catch(e){ return []; } };
-const saveTeachers = (arr) => localStorage.setItem(LS_TEACHERS, JSON.stringify(arr));
-const getResults = () => { try { return JSON.parse(localStorage.getItem(LS_RESULTS)) || []; } catch(e){ return []; } };
-const saveResults = (arr) => localStorage.setItem(LS_RESULTS, JSON.stringify(arr));
-
-(function ensureDemoTeacher() {
-  const t = getTeachers();
-  if (t.length === 0) {
-    t.push({ id: 'demo-teacher', name: 'Демо-учитель', login: 'teacher', pass: 'teacher', created: new Date().toISOString() });
-    saveTeachers(t);
-  }
-})();
-
-const genId = () => 't_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
+// Проверяем, что библиотека загрузилась
+if (!window.supabase) {
+  alert('Не удалось загрузить библиотеку Supabase. Проверьте интернет и перезагрузите страницу.');
+}
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /* ============================================================
    УТИЛИТЫ
@@ -781,6 +769,7 @@ $('modalClose').onclick = () => { $('modal').classList.add('hidden'); $('modalBo
 $('tabStudent').onclick = () => {
   $('tabStudent').classList.add('active'); $('tabTeacher').classList.remove('active');
   $('loginStudent').classList.remove('hidden'); $('loginTeacher').classList.add('hidden');
+  refreshTeacherLoginList();
 };
 $('tabTeacher').onclick = () => {
   $('tabTeacher').classList.add('active'); $('tabStudent').classList.remove('active');
@@ -797,11 +786,13 @@ $('tabTeacherReg').onclick = () => {
 };
 
 async function refreshTeacherLoginList() {
-  const { data: teachers } = await supabase.from('teachers').select('id, name, login');
   const sel = $('teacherSelect');
   if (!sel) return;
+  const { data: teachers, error } = await supabase.from('teachers').select('id, name, login');
+  if (error) { console.error('Ошибка загрузки учителей:', error); return; }
+  
   sel.innerHTML = '';
-  if (teachers.length === 0) {
+  if (!teachers || teachers.length === 0) {
     $('noTeachersMsg').style.display = 'block';
     $('btnStart').disabled = true;
   } else {
@@ -829,30 +820,38 @@ $('btnTeacherReg').onclick = async () => {
   const name = $('rName').value.trim();
   const login = $('rLogin').value.trim().toLowerCase();
   const pass = $('rPass').value;
-  // ... валидация ...
+  $('regErr').textContent = ''; $('regOk').textContent = '';
 
-  const { data, error } = await supabase.from('teachers').insert({
-    id: genId(), name, login, pass
-  }).select();
+  if (name.length < 2) { $('regErr').textContent = 'Введите ФИО учителя.'; return; }
+  if (!/^[a-z0-9_]{3,}$/.test(login)) { $('regErr').textContent = 'Логин: латиница/цифры/подчёркивание, минимум 3 символа.'; return; }
+  if (pass.length < 3) { $('regErr').textContent = 'Пароль: минимум 3 символа.'; return; }
+
+  const { error } = await supabase.from('teachers').insert({
+    id: 't_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7),
+    name, login, pass
+  });
 
   if (error) {
     $('regErr').textContent = error.message.includes('duplicate')
-      ? 'Такой логин уже занят.' : 'Ошибка: ' + error.message;
+      ? 'Такой логин уже занят.' : 'Ошибка базы: ' + error.message;
     return;
   }
   $('regOk').textContent = `Аккаунт создан! Войдите с логином «${login}».`;
+  $('rName').value = ''; $('rLogin').value = ''; $('rPass').value = '';
   refreshTeacherLoginList();
 };
 
 $('btnTeacherLogin').onclick = async () => {
   const login = $('tLogin').value.trim().toLowerCase();
   const pass = $('tPass').value;
-
-  const { data, error } = await supabase.from('teachers')
+  $('loginErrT').textContent = '';
+  
+  const { data: t, error } = await supabase.from('teachers')
     .select('*').eq('login', login).eq('pass', pass).single();
-
-  if (error || !data) { $('loginErrT').textContent = 'Неверный логин или пароль.'; return; }
-  app.teacher = data;
+    
+  if (error || !t) { $('loginErrT').textContent = 'Неверный логин или пароль.'; return; }
+  
+  app.teacher = t;
   $('userBadge').classList.remove('hidden');
   $('userBadge').textContent = '👩‍🏫 ' + t.name;
   $('teacherWho').textContent = 'Учитель: ' + t.name + ' (логин: ' + t.login + ')';
@@ -861,19 +860,24 @@ $('btnTeacherLogin').onclick = async () => {
 };
 
 /* ---------- ВХОД УЧЕНИКА ---------- */
-$('btnStart').onclick = () => {
+$('btnStart').onclick = async () => {
   const name = $('studentName').value.trim();
   const teacherId = $('teacherSelect').value;
+  
   if (name.length < 2) { $('loginErr').textContent = 'Введите имя (минимум 2 символа).'; return; }
   if (!teacherId) { $('loginErr').textContent = 'Выберите учителя.'; return; }
-  const teachers = getTeachers();
-  const t = teachers.find(x => x.id === teacherId);
-  if (!t) { $('loginErr').textContent = 'Учитель не найден.'; return; }
+  
+  const { data: t, error } = await supabase.from('teachers')
+    .select('name').eq('id', teacherId).single();
+    
+  if (error || !t) { $('loginErr').textContent = 'Учитель не найден.'; return; }
+  
   $('loginErr').textContent = '';
   app.role = 'student';
   app.studentName = name;
   app.studentTeacherId = teacherId;
   app.studentTeacherName = t.name;
+  
   $('userBadge').classList.remove('hidden');
   $('userBadge').textContent = '👨‍🎓 ' + name + ' · учитель: ' + t.name;
   $('modeHello').textContent = `Привет, ${name}! Твой учитель: ${t.name}.`;
@@ -889,7 +893,7 @@ $('btnBackToModes2').onclick = () => show('mode');
 $('btnSandboxStudent').onclick = () => {
   const root = generateTree();
   $('modalTitle').textContent = 'Свободный симулятор файловой системы';
-  $('modalHint').textContent = 'Двойной клик по папке — войти внутрь. Клик по файлу — выделить. Сверху виден полный путь. Создавайте, переименовывайте и удаляйте объекты кнопками внизу.';
+  $('modalHint').textContent = 'Двойной клик по папке — войти внутрь. Клик по файлу — выделить. Сверху виден полный путь.';
   const body = $('modalBody');
   body.innerHTML = '';
   const host = document.createElement('div');
@@ -939,7 +943,7 @@ function makeTrainingTasks() {
     tasks.push({
       kind: 'simFolder',
       title: `Задание ${i+7}. Перейди в папку`,
-      desc: `Перейдите в симуляторе в папку: <b>${esc(d.name)}</b>.<br>Полный путь: <span class="path-highlight">${esc(full)}</span><br>Нажмите «Проверить», находясь внутри этой папки.`,
+      desc: `Перейдите в симуляторе в папку: <b>${esc(d.name)}</b>.<br>Полный путь: <span class="path-highlight">${esc(full)}</span>`,
       targetPath: d.path,
       correctText: `Открыть папку ${full}`,
       root
@@ -953,8 +957,8 @@ function makeTrainingTasks() {
       kind: 'simCreate',
       title: `Задание ${i+11}. Практика: создание объекта`,
       desc: needFolder
-        ? `Перейдите в папку <b>${esc(full)}</b> и создайте в ней папку <b>Моя_папка</b>.<br>После создания путь будет: <span class="path-highlight">${esc(full + '\\Моя_папка')}</span>`
-        : `Перейдите в папку <b>${esc(full)}</b> и создайте в ней файл <b>Заметка.txt</b>.<br>После создания путь будет: <span class="path-highlight">${esc(full + '\\Заметка.txt')}</span>`,
+        ? `Перейдите в папку <b>${esc(full)}</b> и создайте папку <b>Моя_папка</b>.`
+        : `Перейдите в папку <b>${esc(full)}</b> и создайте файл <b>Заметка.txt</b>.`,
       targetPath: d.path, needFolder,
       correctText: needFolder ? `В папке ${full} создать папку «Моя_папка»` : `В папке ${full} создать файл «Заметка.txt»`,
       root,
@@ -974,11 +978,10 @@ function makeTrainingTasks() {
   for (let i = 0; i < 3; i++) {
     const f = pickFile(2);
     const folderFull = pathToString(f.path.slice(0,-1));
-    const targetFull = folderFull + '\\Новое_имя.txt';
     tasks.push({
       kind: 'simRename',
       title: `Задание ${i+14}. Практика: переименование`,
-      desc: `Перейдите в папку <b>${esc(folderFull)}</b>, выделите файл <b>${esc(f.name)}</b> и переименуйте его в <b>Новое_имя.txt</b>.<br>Исходный файл: <span class="path-highlight">${esc(pathToString(f.path))}</span><br>После переименования путь будет: <span class="path-highlight">${esc(targetFull)}</span>`,
+      desc: `Перейдите в папку <b>${esc(folderFull)}</b>, выделите файл <b>${esc(f.name)}</b> и переименуйте его в <b>Новое_имя.txt</b>.`,
       correctText: `В папке ${folderFull} переименовать файл «${f.name}» в «Новое_имя.txt»`,
       root,
       checks: (rootFS) => {
@@ -994,7 +997,7 @@ function makeTrainingTasks() {
     tasks.push({
       kind: 'order',
       title: `Задание ${i+17}. Собери путь по порядку`,
-      desc: `Расставьте элементы пути к файлу <b>${esc(f.name)}</b> в правильном порядке: от корня к файлу. Нажимайте на элементы по очереди.`,
+      desc: `Расставьте элементы пути к файлу <b>${esc(f.name)}</b> от корня к файлу.`,
       parts: shuffle(f.path.slice()),
       correctOrder: f.path,
       correctText: pathToString(f.path)
@@ -1013,7 +1016,7 @@ function makeTrainingTasks() {
     tasks.push({
       kind: 'choicePath',
       title: `Задание ${i+19}. Полный путь к файлу`,
-      desc: `Какой полный путь соответствует файлу <b>${esc(f.name)}</b>? (Можно подсмотреть в симуляторе — кнопка сверху.)`,
+      desc: `Какой полный путь соответствует файлу <b>${esc(f.name)}</b>?`,
       options: shuffle([correct, ...wrongs]),
       correct, correctText: correct
     });
@@ -1031,7 +1034,6 @@ function startTraining() {
   app.trainAnswers = [];
   show('train');
   $('helperSim').classList.add('hidden');
-  $('btnOpenHelper').textContent = '🔍 Открыть симулятор (подсмотреть путь)';
   renderTrainingTask();
 }
 
@@ -1044,12 +1046,10 @@ function renderTrainingTask() {
   $('progressBar').style.width = (app.trainIndex / app.trainTasks.length * 100) + '%';
   $('scoreLive').textContent = `Баллы: ${app.trainScore}`;
   $('feedback').classList.add('hidden');
-  $('feedback').innerHTML = '';
   $('btnCheck').classList.remove('hidden');
   $('btnCheck').disabled = false;
   $('btnNext').classList.add('hidden');
   $('btnSkip').classList.remove('hidden');
-  $('helperHint').textContent = '';
 
   const area = $('taskArea');
   area.innerHTML = '';
@@ -1063,8 +1063,7 @@ function renderTrainingTask() {
       b.className = 'ghost'; b.style.textAlign = 'left'; b.textContent = o;
       b.onclick = () => {
         wrap.querySelectorAll('button').forEach(x => x.classList.remove('good'));
-        b.classList.add('good');
-        t._selected = o;
+        b.classList.add('good'); t._selected = o;
       };
       wrap.appendChild(b);
     });
@@ -1078,8 +1077,7 @@ function renderTrainingTask() {
       b.className = 'ghost'; b.textContent = p;
       b.onclick = () => {
         if (b.classList.contains('good')) return;
-        b.classList.add('good');
-        t._order.push(p); renderChosen();
+        b.classList.add('good'); t._order.push(p); renderChosen();
       };
       wrap.appendChild(b);
     });
@@ -1090,24 +1088,18 @@ function renderTrainingTask() {
     area.appendChild(chosen);
     function renderChosen() { $('chosenList').textContent = t._order.join(' \\ '); }
     renderChosen();
-  } else if (t.kind === 'pathInput') {
-    area.innerHTML = `<label for="pathInput">Полный путь:</label>
-      <input type="text" id="pathInput" placeholder="Например: Документы\\Отчёты\\Файл.txt" autocomplete="off">`;
-    $('pathInput').onkeydown = (e) => { if (e.key === 'Enter') checkTraining(); };
   } else {
     const host = document.createElement('div');
     area.appendChild(host);
     t._fmRoot = t.root;
     const opts = { mode: (t.kind === 'simFile' || t.kind === 'simFolder') ? 'navigate' : 'manage' };
     app.fm = new FileManager(host, t._fmRoot, opts);
-    t._host = host;
   }
 }
 
 function cloneTree(node) {
   const copy = { type: node.type, children: {} };
   for (const k in node.children) copy.children[k] = cloneTree(node.children[k]);
-  if (node.name) copy.name = node.name;
   return copy;
 }
 $('btnOpenHelper').onclick = () => {
@@ -1115,19 +1107,12 @@ $('btnOpenHelper').onclick = () => {
   if (!t) return;
   const box = $('helperSim');
   if (!box.classList.contains('hidden')) {
-    box.classList.add('hidden'); box.innerHTML = '';
-    $('btnOpenHelper').textContent = '🔍 Открыть симулятор (подсмотреть путь)';
-    return;
+    box.classList.add('hidden'); box.innerHTML = ''; return;
   }
   box.classList.remove('hidden'); box.innerHTML = '';
-  const hint = document.createElement('div');
-  hint.className = 'muted'; hint.style.marginBottom = '8px';
-  hint.textContent = 'Это отдельная копия файловой системы — для просмотра пути. Рабочее задание ниже не меняется.';
-  box.appendChild(hint);
   const host = document.createElement('div');
   box.appendChild(host);
   app.helperFm = new FileManager(host, cloneTree(t.root), { mode: 'navigate' });
-  $('btnOpenHelper').textContent = '🙈 Скрыть симулятор';
 };
 
 function checkTraining() {
@@ -1143,12 +1128,6 @@ function checkTraining() {
     if (!t._order || t._order.length !== t.correctOrder.length) { showFeedback(false, 'Выберите все элементы пути.'); return; }
     userAnswer = t._order.join('\\');
     ok = JSON.stringify(t._order) === JSON.stringify(t.correctOrder);
-  } else if (t.kind === 'pathInput') {
-    const val = $('pathInput').value.trim();
-    if (!val) { showFeedback(false, 'Введите путь.'); return; }
-    userAnswer = val;
-    const norm = s => s.replace(/\//g, '\\').replace(/\s+/g, '').toLowerCase();
-    ok = norm(val) === norm(pathToString(t.correctPath));
   } else if (t.kind === 'simFile') {
     if (!app.fm || !app.fm.selected) { showFeedback(false, 'Выделите файл в симуляторе.'); return; }
     if (app.fm.selected.node.type !== 'file') { showFeedback(false, 'Нужно выделить файл.'); return; }
@@ -1164,38 +1143,29 @@ function checkTraining() {
     ok = res.ok;
     if (!ok) { showFeedback(false, res.msg); finalizeTrainAnswer(t, false, userAnswer); return; }
   }
-
   t._lastAnswer = userAnswer;
   finalizeTrainAnswer(t, ok, userAnswer);
 }
 
-function showTrainCorrectAnswer(t, ok) {
-  const fb = $('feedback');
-  fb.classList.remove('hidden');
-  fb.classList.add(ok ? 'ok' : 'bad');
-  const correctText = t.correctText || getCorrectTextTrain(t) || '—';
-  fb.innerHTML = (ok ? '✅ Верно!' : '❌ Неверно.') +
-    `<div class="correct-answer"><b>Правильный ответ:</b> ${esc(correctText)}</div>`;
-}
-function getCorrectTextTrain(t) {
-  if (t.correct) return t.correct;
-  if (t.correctOrder) return t.correctOrder.join('\\');
-  if (t.correctPath) return pathToString(t.correctPath);
-  if (t.targetPath) return pathToString(t.targetPath);
-  return '';
-}
 function finalizeTrainAnswer(t, ok, userAnswer) {
   if (t._finalized) return;
   t._finalized = true;
   if (ok) app.trainScore++;
-  app.trainAnswers.push({ title: t.title, correct: ok, userAnswer, correctAnswer: t.correctText || getCorrectTextTrain(t) });
-  showTrainCorrectAnswer(t, ok);
+  app.trainAnswers.push({ title: t.title, correct: ok, userAnswer, correctAnswer: t.correctText || '' });
+  
+  const fb = $('feedback');
+  fb.classList.remove('hidden', 'ok', 'bad');
+  fb.classList.add(ok ? 'ok' : 'bad');
+  fb.innerHTML = (ok ? '✅ Верно!' : '❌ Неверно.') +
+    `<div class="correct-answer"><b>Правильный ответ:</b> ${esc(t.correctText || '—')}</div>`;
+
   $('btnCheck').disabled = true;
   $('btnNext').classList.remove('hidden');
   $('btnSkip').classList.add('hidden');
   $('progressBar').style.width = ((app.trainIndex + 1) / app.trainTasks.length * 100) + '%';
   $('scoreLive').textContent = `Баллы: ${app.trainScore}`;
 }
+
 function showFeedback(ok, text) {
   const el = $('feedback');
   el.classList.remove('hidden', 'ok', 'bad');
@@ -1212,28 +1182,21 @@ $('btnNext').onclick = () => {
 $('btnSkip').onclick = () => {
   const t = app.trainTasks[app.trainIndex];
   if (!t || t._finalized) return;
-  t._lastAnswer = '(пропущено)';
   finalizeTrainAnswer(t, false, '(пропущено)');
 };
-$('btnExitTrain').onclick = () => { if (confirm('Завершить тренировку и выйти к выбору режима?')) show('mode'); };
+$('btnExitTrain').onclick = () => { if (confirm('Завершить тренировку?')) show('mode'); };
 
 function finishTraining() {
   show('trainFinal');
   const total = app.trainTasks.length;
   const pct = Math.round(app.trainScore / total * 100);
   $('trainFinalScore').innerHTML = `${app.trainScore} <small style="font-size:1.2rem;color:#6b7793">/ ${total}</small>`;
-  let msg;
-  if (pct >= 90) msg = 'Отлично! Вы прекрасно разбираетесь в файлах и папках.';
-  else if (pct >= 70) msg = 'Хорошо! Есть небольшие недочёты.';
-  else if (pct >= 50) msg = 'Неплохо, но стоит потренироваться ещё.';
-  else msg = 'Повторите тему и попробуйте снова.';
-  $('trainFinalMsg').textContent = msg + ` (${pct}%)`;
+  $('trainFinalMsg').textContent = `Результат: ${pct}%`;
   $('trainFinalList').innerHTML = app.trainAnswers.map(a => {
     const cls = a.correct ? 'ok' : 'bad';
     const icon = a.correct ? '✅' : '❌';
     return `<div class="task-feedback ${cls}" style="margin-top:8px">
       <b>${icon} ${esc(a.title)}</b><br>
-      Ваш ответ: ${esc(a.userAnswer || '—')}<br>
       Правильно: ${esc(a.correctAnswer || '—')}
     </div>`;
   }).join('');
@@ -1273,7 +1236,7 @@ function makeTestTasks() {
     const ext = f.name.split('.').pop();
     const all = ['txt','docx','jpg','png','mp3','mp4','exe','zip','doc','bmp','jpeg','avi','mkv','wav','html','css'];
     const wrongs = shuffle(all.filter(e => e !== ext)).slice(0,3);
-    tasks.push({ kind:'choice', title:'Вопрос 4', desc:`Какое расширение у файла <b>${esc(f.name)}</b>?`, options: shuffle([ext, ...wrongs]), correct: ext, explain:`Расширение — часть имени после последней точки: «${esc(ext)}».`, root });
+    tasks.push({ kind:'choice', title:'Вопрос 4', desc:`Какое расширение у файла <b>${esc(f.name)}</b>?`, options: shuffle([ext, ...wrongs]), correct: ext, explain:`Расширение: «${esc(ext)}».`, root });
   }
   tasks.push({
     kind:'choice', title:'Вопрос 5',
@@ -1285,20 +1248,20 @@ function makeTestTasks() {
       'Дата последнего изменения файла'
     ],
     correct: 'Все папки от корня до файла, записанные через разделитель, и имя файла',
-    explain:'Полный путь однозначно указывает положение файла в файловой системе.', root
+    explain:'Полный путь однозначно указывает положение файла.', root
   });
   tasks.push({
     kind:'choice', title:'Вопрос 6',
     desc:'Что показывает <b>расширение</b> имени файла?',
     options: ['Тип (формат) файла', 'Размер файла', 'Имя автора', 'Дату создания папки'],
     correct: 'Тип (формат) файла',
-    explain:'По расширению (например, .txt, .jpg, .exe) программа понимает тип файла.', root
+    explain:'По расширению программа понимает тип файла.', root
   });
   {
     const f = pick(files.filter(x => x.path.length >= 3));
     tasks.push({
       kind:'order', title:'Вопрос 7',
-      desc:`Соберите путь к файлу <b>${esc(f.name)}</b> по порядку: от корня к файлу.`,
+      desc:`Соберите путь к файлу <b>${esc(f.name)}</b> по порядку.`,
       parts: shuffle(f.path.slice()), correctOrder: f.path,
       explain: `Правильный порядок: ${esc(pathToString(f.path))}`, root
     });
@@ -1307,7 +1270,7 @@ function makeTestTasks() {
     const f = pick(files.filter(x => x.path.length >= 2 && x.path.length <= 4));
     tasks.push({
       kind:'pathInput', title:'Вопрос 8',
-      desc:`Запишите полный путь к файлу <b>${esc(f.name)}</b>. Разделитель — обратный слэш «\\».`,
+      desc:`Запишите полный путь к файлу <b>${esc(f.name)}</b>. Разделитель — «\\».`,
       correctPath: f.path,
       explain:`Правильный ответ: ${esc(pathToString(f.path))}`, root
     });
@@ -1317,13 +1280,13 @@ function makeTestTasks() {
     desc:'Как называется папка, которая находится внутри другой папки?',
     options: ['Вложенная папка', 'Корневой файл', 'Расширение', 'Ярлык'],
     correct: 'Вложенная папка',
-    explain:'Папки образуют дерево: папки внутри папок называются вложенными.', root
+    explain:'Папки образуют дерево.', root
   });
   {
     const f = pick(files.filter(x => x.path.length >= 2));
     tasks.push({
       kind:'simFind', title:'Вопрос 10',
-      desc:`Пользуясь симулятором, найдите и выделите файл <b>${esc(f.name)}</b>.<br>Полный путь: <span class="path-highlight">${esc(pathToString(f.path))}</span>`,
+      desc:`Найдите и выделите файл <b>${esc(f.name)}</b>.<br>Путь: <span class="path-highlight">${esc(pathToString(f.path))}</span>`,
       targetName: f.name, targetPath: f.path, root
     });
   }
@@ -1340,32 +1303,21 @@ function startTest() {
   app.testAnswers = [];
   show('test');
   $('testSimInline').classList.add('hidden');
-  $('testSimInline').innerHTML = '';
-  $('btnTestSim').textContent = '🔍 Открыть симулятор';
   renderTestTask();
 }
 
-/* Кнопка «Открыть симулятор» в тесте */
 $('btnTestSim').onclick = () => {
   const t = app.testTasks[app.testIndex];
   if (!t) return;
   const box = $('testSimInline');
   if (!box.classList.contains('hidden')) {
-    box.classList.add('hidden'); box.innerHTML = '';
-    $('btnTestSim').textContent = '🔍 Открыть симулятор';
-    return;
+    box.classList.add('hidden'); box.innerHTML = ''; return;
   }
   box.classList.remove('hidden'); box.innerHTML = '';
-  const hint = document.createElement('div');
-  hint.className = 'muted'; hint.style.marginBottom = '8px';
-  hint.textContent = 'Это копия файловой системы вопроса — можно посмотреть пути и структуру, на ответы это не влияет.';
-  box.appendChild(hint);
   const host = document.createElement('div');
   box.appendChild(host);
-  // Для вопросов-симуляторов используем исходное дерево, для остальных — копию
   const tree = (t.kind === 'simFind') ? t.root : cloneTree(t.root || app.testRoot);
   app.testHelperFm = new FileManager(host, tree, { mode: 'navigate' });
-  $('btnTestSim').textContent = '🙈 Скрыть симулятор';
 };
 
 function renderTestTask() {
@@ -1378,9 +1330,7 @@ function renderTestTask() {
   $('testFeedback').classList.add('hidden');
   $('btnTestNext').disabled = false;
   $('btnTestNext').textContent = (app.testIndex === app.testTasks.length - 1) ? 'Завершить тест' : 'Ответить';
-  // закрываем и сбрасываем встроенный симулятор при новом вопросе
   $('testSimInline').classList.add('hidden'); $('testSimInline').innerHTML = '';
-  $('btnTestSim').textContent = '🔍 Открыть симулятор';
 
   const area = $('testArea');
   area.innerHTML = '';
@@ -1394,8 +1344,7 @@ function renderTestTask() {
       b.className = 'ghost'; b.style.textAlign = 'left'; b.textContent = o;
       b.onclick = () => {
         wrap.querySelectorAll('button').forEach(x => x.classList.remove('good'));
-        b.classList.add('good');
-        t._selected = o;
+        b.classList.add('good'); t._selected = o;
       };
       wrap.appendChild(b);
     });
@@ -1421,9 +1370,8 @@ function renderTestTask() {
     function renderChosen() { $('testChosenList').textContent = t._order.join(' \\ '); }
     renderChosen();
   } else if (t.kind === 'pathInput') {
-    area.innerHTML = `<label for="testPathInput">Полный путь:</label>
+    area.innerHTML = `<label>Полный путь:</label>
       <input type="text" id="testPathInput" placeholder="Например: Документы\\Отчёты\\Файл.txt" autocomplete="off">`;
-    $('testPathInput').onkeydown = (e) => { if (e.key === 'Enter') submitTestAnswer(); };
   } else if (t.kind === 'simFind') {
     const host = document.createElement('div');
     area.appendChild(host);
@@ -1433,7 +1381,7 @@ function renderTestTask() {
 }
 
 $('btnTestNext').onclick = submitTestAnswer;
-$('btnExitTest').onclick = () => { if (confirm('Прервать тест? Результат не будет сохранён.')) show('mode'); };
+$('btnExitTest').onclick = () => { if (confirm('Прервать тест?')) show('mode'); };
 
 function submitTestAnswer() {
   const t = app.testTasks[app.testIndex];
@@ -1447,10 +1395,10 @@ function submitTestAnswer() {
   let userAnswer = '';
 
   if (t.kind === 'choice') {
-    if (!t._selected) { flashTest('Выберите вариант ответа.'); return; }
+    if (!t._selected) { flashTest('Выберите вариант.'); return; }
     userAnswer = t._selected; ok = t._selected === t.correct;
   } else if (t.kind === 'order') {
-    if (!t._order || t._order.length !== t.correctOrder.length) { flashTest('Выберите все элементы пути.'); return; }
+    if (!t._order || t._order.length !== t.correctOrder.length) { flashTest('Выберите все элементы.'); return; }
     userAnswer = t._order.join('\\');
     ok = JSON.stringify(t._order) === JSON.stringify(t.correctOrder);
   } else if (t.kind === 'pathInput') {
@@ -1460,8 +1408,7 @@ function submitTestAnswer() {
     const norm = s => s.replace(/\//g, '\\').replace(/\s+/g, '').toLowerCase();
     ok = norm(val) === norm(pathToString(t.correctPath));
   } else if (t.kind === 'simFind') {
-    if (!app.fm || !app.fm.selected) { flashTest('Выделите файл в симуляторе.'); return; }
-    if (app.fm.selected.node.type !== 'file') { flashTest('Нужно выделить файл.'); return; }
+    if (!app.fm || !app.fm.selected) { flashTest('Выделите файл.'); return; }
     const full = [...app.fm.cwd, app.fm.selected.name];
     userAnswer = pathToString(full);
     ok = full.join('/') === t.targetPath.join('/');
@@ -1469,19 +1416,16 @@ function submitTestAnswer() {
 
   t._done = true;
   if (ok) app.testCorrect++;
-  app.testAnswers.push({ title: t.title, correct: ok, userAnswer, correctAnswer: getCorrectTextTrain(t) });
+  app.testAnswers.push({ title: t.title, correct: ok, userAnswer, correctAnswer: t.explain || pathToString(t.correctPath || t.targetPath || []) });
 
   const fb = $('testFeedback');
   fb.classList.remove('hidden', 'ok', 'bad');
   fb.classList.add(ok ? 'ok' : 'bad');
-  fb.innerHTML = ok
-    ? `✅ Ответ принят. <span class="muted">${esc(t.explain || '')}</span>`
-    : `📌 Ответ принят. <span class="muted">${esc(t.explain || getCorrectTextTrain(t))}</span>`;
+  fb.innerHTML = ok ? '✅ Принято.' : '📌 Принято.';
 
   $('btnTestNext').disabled = false;
   $('btnTestNext').textContent = (app.testIndex === app.testTasks.length - 1) ? 'Завершить тест' : 'Дальше →';
   $('testBar').style.width = ((app.testIndex + 1) / app.testTasks.length * 100) + '%';
-  fb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function flashTest(msg) {
@@ -1498,14 +1442,12 @@ function finishTest() {
   const v = $('testVerdict');
   v.textContent = passed ? '✅ Зачёт' : '⚠️ Пока не зачёт';
   v.style.color = passed ? '#157a45' : '#a5281b';
-  $('testFinalMsg').textContent = passed
-    ? 'Вы успешно прошли итоговое тестирование по теме «Файлы и папки».'
-    : 'Рекомендуем пройти тренировку и попробовать тест ещё раз.';
+  $('testFinalMsg').textContent = passed ? 'Тест пройден.' : 'Рекомендуем пройти тренировку.';
   saveResult({ mode:'test', score: app.testCorrect, total: app.testTasks.length, pct, passed, answers: app.testAnswers });
 }
 $('btnTestAgain').onclick = () => startTest();
 
-/* ---------- СОХРАНЕНИЕ ---------- */
+/* ---------- СОХРАНЕНИЕ В SUPABASE ---------- */
 async function saveResult(extra) {
   if (!app.studentName || !app.studentTeacherId) return;
   const { error } = await supabase.from('results').insert({
@@ -1526,9 +1468,7 @@ $('btnRefresh').onclick = renderTeacher;
 async function renderTeacher() {
   if (!app.teacher) return;
   const { data: results, error } = await supabase.from('results')
-    .select('*')
-    .eq('teacher_id', app.teacher.id)
-    .order('created', { ascending: false });
+    .select('*').eq('teacher_id', app.teacher.id).order('created', { ascending: false });
 
   if (error) { console.error(error); return; }
   if (!results || results.length === 0) {
@@ -1536,37 +1476,35 @@ async function renderTeacher() {
     $('teacherContent').classList.add('hidden');
     return;
   }
- 
   $('teacherEmpty').classList.add('hidden');
   $('teacherContent').classList.remove('hidden');
 
   const train = results.filter(r => r.mode === 'train');
-  const test = results.filter(r => r.mode === 'test');
+  const test  = results.filter(r => r.mode === 'test');
   const avgAll = Math.round(results.reduce((s,r) => s + (r.pct||0), 0) / results.length);
   const testPassed = test.filter(r => r.passed).length;
 
   $('teacherStats').innerHTML = `
     <div class="stat"><div class="num">${results.length}</div><div class="lbl">Всего работ</div></div>
     <div class="stat"><div class="num">${train.length}</div><div class="lbl">Тренировок</div></div>
-    <div class="stat"><div class="num">${test.length}</div><div class="lbl">Итоговых тестов</div></div>
-    <div class="stat"><div class="num">${testPassed}</div><div class="lbl">Зачётов по тесту</div></div>
-    <div class="stat"><div class="num">${avgAll}%</div><div class="lbl">Средний результат</div></div>
+    <div class="stat"><div class="num">${test.length}</div><div class="lbl">Тестов</div></div>
+    <div class="stat"><div class="num">${testPassed}</div><div class="lbl">Зачётов</div></div>
+    <div class="stat"><div class="num">${avgAll}%</div><div class="lbl">Средний балл</div></div>
   `;
 
-  const tbody = $('teacherTable').querySelector('tbody');
-  tbody.innerHTML = results.slice().reverse().map(r => {
-    const date = new Date(r.date).toLocaleString('ru-RU', { dateStyle:'short', timeStyle:'short' });
+  $('teacherTable').querySelector('tbody').innerHTML = results.map(r => {
+    const date = new Date(r.created).toLocaleString('ru-RU', { dateStyle:'short', timeStyle:'short' });
     let resultCell;
     if (r.mode === 'test') {
       const cls = r.passed ? 'ok' : 'bad';
       const label = r.passed ? 'Зачёт' : 'Незачёт';
-      resultCell = `<span class="pill ${cls}">${label}</span> <span class="muted">(${r.score}/${r.total}, ${r.pct}%)</span>`;
+      resultCell = `<span class="pill ${cls}">${label}</span> <span class="muted">(${r.score}/${r.total})</span>`;
     } else {
       const cls = r.pct >= 70 ? 'ok' : 'bad';
       resultCell = `<span class="pill ${cls}">${r.pct}%</span> <span class="muted">(${r.score}/${r.total})</span>`;
     }
     return `<tr>
-      <td><b>${esc(r.name)}</b></td>
+      <td><b>${esc(r.student_name)}</b></td>
       <td>${r.mode === 'test' ? '📝 Тест' : '🎮 Тренировка'}</td>
       <td>${esc(date)}</td>
       <td>${resultCell}</td>
