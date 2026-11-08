@@ -1,0 +1,1591 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Файлы и папки — тренажёр 7 класс</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: 'Segoe UI', Arial, sans-serif;
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    min-height: 100vh; color: #222;
+  }
+  .app { max-width: 1150px; margin: 0 auto; padding: 16px; }
+  header {
+    display: flex; justify-content: space-between; align-items: center;
+    color: #fff; padding: 10px 0 18px; flex-wrap: wrap; gap: 8px;
+  }
+  header h1 { font-size: 1.35rem; margin: 0; }
+  .badge { background: rgba(255,255,255,.18); padding: 6px 12px; border-radius: 20px; font-size: .85rem; }
+  .card {
+    background: #fff; border-radius: 14px; padding: 18px 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.25); margin-bottom: 16px;
+  }
+  h2 { margin: 0 0 12px; font-size: 1.15rem; color: #1e3c72; }
+  h3 { margin: 14px 0 8px; font-size: 1rem; color: #2a5298; }
+  label { display: block; margin: 10px 0 4px; font-size: .9rem; font-weight: 600; }
+  input[type=text], input[type=password], select {
+    width: 100%; padding: 10px 12px; border: 2px solid #d6dce8; border-radius: 9px;
+    font-size: 1rem; outline: none; transition: border .2s; background: #fff;
+  }
+  input:focus, select:focus { border-color: #2a5298; }
+  button {
+    cursor: pointer; border: none; border-radius: 9px; padding: 10px 18px;
+    font-size: .95rem; font-weight: 600; transition: transform .1s, box-shadow .2s;
+    background: #2a5298; color: #fff; margin-top: 12px;
+  }
+  button:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(42,82,152,.35); }
+  button:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+  button.ghost { background: #eef2f9; color: #1e3c72; }
+  button.good { background: #1e9e5a; }
+  button.warn { background: #c0392b; }
+  button.big { padding: 18px 24px; font-size: 1.1rem; width: 100%; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .row > * { flex: 1; min-width: 160px; }
+  .muted { color: #6b7793; font-size: .88rem; }
+  .error { color: #c0392b; font-size: .9rem; margin-top: 8px; }
+  .ok-text { color: #157a45; font-size: .9rem; margin-top: 8px; }
+  .hidden { display: none !important; }
+
+  .fm { border: 2px solid #d6dce8; border-radius: 12px; overflow: hidden; }
+  .fm-path {
+    background: #eef2f9; padding: 10px 14px; font-family: Consolas, monospace;
+    font-size: .9rem; display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
+    border-bottom: 1px solid #d6dce8;
+  }
+  .crumb { cursor: pointer; color: #2a5298; font-weight: 600; }
+  .crumb:hover { text-decoration: underline; }
+  .crumb.cur { color: #1e3c72; cursor: default; text-decoration: none; }
+  .fm-body { display: flex; min-height: 280px; }
+  .fm-side {
+    width: 170px; border-right: 1px solid #e3e9f2; padding: 10px; background: #fafbfe;
+    font-size: .88rem;
+  }
+  .fm-side div { padding: 7px 9px; border-radius: 7px; cursor: pointer; margin-bottom: 3px; }
+  .fm-side div:hover { background: #eef2f9; }
+  .fm-side div.active { background: #dfe8fa; font-weight: 700; }
+  .fm-main { flex: 1; padding: 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(115px, 1fr)); gap: 10px; align-content: start; }
+  .item {
+    border: 2px solid #e3e9f2; border-radius: 10px; padding: 12px 8px; text-align: center;
+    cursor: pointer; user-select: none; transition: .15s; background: #fff;
+    word-break: break-word; font-size: .82rem;
+  }
+  .item:hover { border-color: #2a5298; background: #f5f8ff; }
+  .item.sel { border-color: #f39c12; background: #fff8e6; box-shadow: 0 0 0 3px rgba(243,156,18,.25); }
+  .item .ico { font-size: 1.8rem; display: block; margin-bottom: 4px; }
+  .item .nm { font-weight: 600; }
+  .fm-empty { grid-column: 1/-1; text-align: center; color: #9aa5bc; padding: 40px 0; font-style: italic; }
+  .fm-actions { padding: 10px 12px; background: #fafbfe; border-top: 1px solid #e3e9f2; display: flex; gap: 8px; flex-wrap: wrap; }
+  .fm-actions button { margin-top: 0; font-size: .88rem; padding: 8px 12px; }
+
+  .progress-wrap { height: 10px; background: #e3e9f2; border-radius: 6px; overflow: hidden; margin: 10px 0; }
+  .progress-bar { height: 100%; background: linear-gradient(90deg,#2a5298,#4f8ef7); width: 0; transition: width .3s; }
+  .task-count { font-size: .85rem; color: #6b7793; }
+
+  table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+  th, td { padding: 9px 10px; border-bottom: 1px solid #e3e9f2; text-align: left; }
+  th { background: #f5f8ff; color: #1e3c72; }
+  tr:hover td { background: #fafbfe; }
+  .pill { padding: 2px 9px; border-radius: 20px; font-size: .78rem; font-weight: 700; }
+  .pill.ok { background: #d6f5e3; color: #157a45; }
+  .pill.bad { background: #fde0dc; color: #a5281b; }
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap: 12px; }
+  .stat { background: #f5f8ff; border-radius: 10px; padding: 14px; text-align: center; }
+  .stat .num { font-size: 1.5rem; font-weight: 800; color: #2a5298; }
+  .stat .lbl { font-size: .78rem; color: #6b7793; }
+
+  .result-big { text-align: center; padding: 10px 0; }
+  .result-big .score { font-size: 2.4rem; font-weight: 800; color: #2a5298; }
+  .task-feedback { font-size: .9rem; padding: 10px 12px; border-radius: 8px; margin-top: 10px; }
+  .task-feedback.ok { background: #e8f8ef; color: #157a45; }
+  .task-feedback.bad { background: #fdecea; color: #a5281b; }
+
+  .correct-answer {
+    margin-top: 10px; padding: 10px 12px; border-radius: 8px;
+    background: #eaf3ff; border: 1px dashed #2a5298;
+    color: #1e3c72; font-size: .92rem;
+  }
+  .path-highlight {
+    display: inline-block; margin-top: 8px; padding: 6px 10px; border-radius: 8px;
+    background: #fff8e6; border: 1px solid #f39c12;
+    font-family: Consolas, monospace; font-size: .9rem; color: #7a4f00;
+  }
+
+  .tabs { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+  .tabs button { margin-top: 0; background: #eef2f9; color: #1e3c72; }
+  .tabs button.active { background: #2a5298; color: #fff; }
+
+  .mode-card { border: 2px solid #d6dce8; border-radius: 12px; padding: 18px; text-align: center; }
+  .mode-card h3 { margin-top: 0; }
+  .mode-card p { min-height: 48px; }
+
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.55);
+    display: flex; align-items: center; justify-content: center; z-index: 100; padding: 16px;
+  }
+  .modal {
+    background: #fff; border-radius: 14px; padding: 18px 20px; max-width: 950px; width: 100%;
+    max-height: 90vh; overflow: auto;
+  }
+  .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 10px; flex-wrap: wrap; }
+  .modal-head h2 { margin: 0; }
+  .modal-head button { margin-top: 0; }
+
+  .inline-sim { border: 2px dashed #f39c12; border-radius: 12px; padding: 10px; margin-top: 12px; background: #fffbf0; }
+
+  /* Теория */
+  .theory h3 { color: #1e3c72; margin: 18px 0 8px; font-size: 1.05rem; border-left: 4px solid #2a5298; padding-left: 8px; }
+  .theory p { margin: 6px 0; line-height: 1.55; }
+  .theory ul { margin: 6px 0 10px 22px; padding: 0; }
+  .theory li { margin: 5px 0; line-height: 1.5; }
+  .theory code, .theory .mono {
+    font-family: Consolas, monospace; background: #eef2f9; padding: 1px 6px;
+    border-radius: 5px; color: #1e3c72; font-size: .92em;
+  }
+  .theory .example {
+    background: #f5f8ff; border-left: 4px solid #4f8ef7;
+    padding: 10px 12px; border-radius: 8px; margin: 8px 0;
+    font-size: .92rem;
+  }
+  .theory .important {
+    background: #fff8e6; border-left: 4px solid #f39c12;
+    padding: 10px 12px; border-radius: 8px; margin: 8px 0;
+    font-size: .92rem;
+  }
+  .tree {
+    font-family: Consolas, monospace; font-size: .9rem; background: #fafbfe;
+    border: 1px solid #e3e9f2; border-radius: 8px; padding: 10px 14px;
+    white-space: pre; overflow-x: auto; line-height: 1.5; color: #1e3c72;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>🖥️ Файлы и папки — тренажёр (7 класс)</h1>
+    <div id="userBadge" class="badge hidden"></div>
+  </header>
+
+  <!-- ЭКРАН ВХОДА -->
+  <div id="screen-login" class="card">
+    <h2>Вход в приложение</h2>
+    <div class="tabs">
+      <button id="tabStudent" class="active">👨‍🎓 Я ученик</button>
+      <button id="tabTeacher">👩‍🏫 Я учитель</button>
+    </div>
+
+    <div id="loginStudent">
+      <label for="studentName">Ваше имя и фамилия</label>
+      <input type="text" id="studentName" placeholder="Например: Иванов Пётр" autocomplete="off">
+
+      <label>Ваш учитель</label>
+      <div id="teacherPickWrap">
+        <select id="teacherSelect"></select>
+        <p class="muted" id="noTeachersMsg" style="margin-top:8px;display:none">
+          Пока ни один учитель не зарегистрирован. Учитель должен сначала создать аккаунт на вкладке «Я учитель».
+        </p>
+      </div>
+
+      <p class="muted" style="margin-top:10px">Вариант заданий формируется случайно — у каждого ученика он будет свой.</p>
+      <div class="row" style="margin-top:10px">
+        <button id="btnStart" style="flex:1">Продолжить</button>
+        <button id="btnTheoryFromLogin" class="ghost" style="flex:0;margin-top:0">📚 Теория</button>
+      </div>
+      <div id="loginErr" class="error"></div>
+    </div>
+
+    <div id="loginTeacher" class="hidden">
+      <div class="tabs" style="margin-top:0">
+        <button id="tabTeacherLogin" class="active">Вход</button>
+        <button id="tabTeacherReg">Регистрация</button>
+      </div>
+
+      <div id="teacherLoginBlock">
+        <label for="tLogin">Логин учителя</label>
+        <input type="text" id="tLogin" placeholder="Ваш логин" autocomplete="off">
+        <label for="tPass">Пароль</label>
+        <input type="password" id="tPass" placeholder="Пароль" autocomplete="off">
+        <button id="btnTeacherLogin">Войти</button>
+        <div id="loginErrT" class="error"></div>
+        <p class="muted" style="margin-top:10px">Если вы впервые — создайте аккаунт на вкладке «Регистрация».<br>
+        (Демо-аккаунт: логин <b>teacher</b>, пароль <b>teacher</b>.)</p>
+      </div>
+
+      <div id="teacherRegBlock" class="hidden">
+        <label for="rName">ФИО учителя</label>
+        <input type="text" id="rName" placeholder="Например: Смирнова Анна Петровна" autocomplete="off">
+        <label for="rLogin">Логин</label>
+        <input type="text" id="rLogin" placeholder="Латинские буквы, цифры" autocomplete="off">
+        <label for="rPass">Пароль</label>
+        <input type="password" id="rPass" placeholder="Минимум 3 символа" autocomplete="off">
+        <button id="btnTeacherReg">Создать аккаунт</button>
+        <div id="regErr" class="error"></div>
+        <div id="regOk" class="ok-text"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ВЫБОР РЕЖИМА -->
+  <div id="screen-mode" class="hidden">
+    <div class="card">
+      <h2 id="modeHello"></h2>
+      <p class="muted">Выберите, чем хотите заняться:</p>
+      <div class="row" style="align-items:stretch">
+        <div class="mode-card">
+          <h3>🎮 Тренировка</h3>
+          <p>20 интерактивных заданий в симуляторе файловой системы. После проверки показывается <b>правильный ответ</b>. Симулятор можно открывать в любой момент.</p>
+          <button class="big good" id="btnTrain">Начать тренировку</button>
+        </div>
+        <div class="mode-card">
+          <h3>📝 Итоговое тестирование</h3>
+          <p>10 вопросов по теме «Файлы и папки». Баллы во время работы <b>не показываются</b>. В конце — итог без цифр, только «зачёт / незачёт».</p>
+          <button class="big" id="btnTest">Пройти тест</button>
+        </div>
+        <div class="mode-card">
+          <h3>🧭 Свободный симулятор</h3>
+          <p>Просто походить по папкам, посмотреть пути, создать, переименовать и удалить объекты. Без проверки — для исследования.</p>
+          <button class="big ghost" id="btnSandboxStudent">Открыть симулятор</button>
+        </div>
+      </div>
+      <div class="row" style="margin-top:16px">
+        <button id="btnTheory" style="flex:0">📚 Открыть теорию</button>
+        <button class="ghost" id="btnExitMode" style="flex:0">Выйти</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ЭКРАН ТРЕНИРОВКИ -->
+  <div id="screen-train" class="hidden">
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <div style="flex:2">
+          <h2 id="taskTitle" style="margin-bottom:4px"></h2>
+          <div id="taskDesc" class="muted"></div>
+        </div>
+        <div style="flex:1; text-align:right">
+          <div class="task-count" id="taskCount"></div>
+          <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+          <div class="muted" id="scoreLive"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between;margin-bottom:8px">
+        <button class="ghost" id="btnOpenHelper" style="margin-top:0;flex:0">🔍 Открыть симулятор (подсмотреть путь)</button>
+        <button class="ghost" id="btnTheoryInTrain" style="margin-top:0;flex:0">📚 Теория</button>
+        <span class="muted" id="helperHint"></span>
+      </div>
+      <div id="helperSim" class="inline-sim hidden"></div>
+
+      <div id="taskArea" style="margin-top:12px"></div>
+
+      <div class="row" style="margin-top:14px">
+        <button id="btnCheck" class="good">Проверить</button>
+        <button id="btnNext" class="hidden">Следующее задание →</button>
+        <button id="btnSkip" class="ghost">Пропустить</button>
+        <button id="btnExitTrain" class="ghost" style="flex:0">Завершить тренировку</button>
+      </div>
+      <div id="feedback" class="task-feedback hidden"></div>
+    </div>
+  </div>
+
+  <!-- ИТОГИ ТРЕНИРОВКИ -->
+  <div id="screen-trainFinal" class="card hidden">
+    <div class="result-big">
+      <div class="score" id="trainFinalScore"></div>
+      <div class="muted" id="trainFinalMsg"></div>
+    </div>
+    <div id="trainFinalList"></div>
+    <div class="row" style="margin-top:14px">
+      <button id="btnTrainAgain" class="ghost">Пройти тренировку заново</button>
+      <button id="btnBackToModes">К выбору режима</button>
+    </div>
+  </div>
+
+  <!-- ЭКРАН ТЕСТА -->
+  <div id="screen-test" class="hidden">
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <div style="flex:2">
+          <h2 id="testTitle" style="margin-bottom:4px"></h2>
+          <div id="testDesc" class="muted"></div>
+        </div>
+        <div style="flex:1; text-align:right">
+          <div class="task-count" id="testCount"></div>
+          <div class="progress-wrap"><div class="progress-bar" id="testBar"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between;margin-bottom:8px">
+        <button class="ghost" id="btnTestSim" style="margin-top:0;flex:0">🔍 Открыть симулятор</button>
+        <button class="ghost" id="btnTheoryInTest" style="margin-top:0;flex:0">📚 Теория</button>
+        <span class="muted">Симулятор — чтобы посмотреть структуру папок и пути. На ответы это не влияет.</span>
+      </div>
+      <div id="testSimInline" class="inline-sim hidden"></div>
+      <div id="testArea" style="margin-top:12px"></div>
+      <div class="row" style="margin-top:14px">
+        <button id="btnTestNext" class="good">Ответить</button>
+        <button id="btnExitTest" class="ghost" style="flex:0">Прервать тест</button>
+      </div>
+      <div id="testFeedback" class="task-feedback hidden"></div>
+    </div>
+  </div>
+
+  <!-- ИТОГИ ТЕСТА -->
+  <div id="screen-testFinal" class="card hidden">
+    <div class="result-big">
+      <div id="testVerdict" style="font-size:2rem;font-weight:800;margin-bottom:8px"></div>
+      <div class="muted" id="testFinalMsg"></div>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <button id="btnTestAgain" class="ghost">Пройти тест заново</button>
+      <button id="btnBackToModes2">К выбору режима</button>
+    </div>
+  </div>
+
+  <!-- ЭКРАН УЧИТЕЛЯ -->
+  <div id="screen-teacher" class="hidden">
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <h2 style="margin:0">📊 Результаты моих учеников</h2>
+          <div class="muted" id="teacherWho"></div>
+        </div>
+        <button id="btnRefresh" class="ghost" style="margin-top:0">Обновить</button>
+      </div>
+      <div id="teacherEmpty" class="muted" style="margin-top:10px">Пока нет пройденных работ ваших учеников.</div>
+      <div id="teacherContent" class="hidden">
+        <div class="stat-grid" id="teacherStats" style="margin:14px 0"></div>
+        <div style="overflow-x:auto">
+          <table id="teacherTable">
+            <thead>
+              <tr><th>Ученик</th><th>Режим</th><th>Дата</th><th>Результат</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="row" style="margin-top:14px">
+          <button id="btnClearResults" class="warn">Очистить результаты моих учеников</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h2 style="margin-top:0">🛠 Демонстрационный симулятор</h2>
+      <p class="muted">Для показа на уроке: ходите по папкам, создавайте и удаляйте объекты.</p>
+      <div id="sandbox" class="hidden"></div>
+      <button id="btnSandbox" class="ghost">Открыть симулятор</button>
+      <button id="btnTheoryTeacher" class="ghost">📚 Открыть теорию</button>
+      <button id="btnExitTeacher" class="ghost">Выйти</button>
+    </div>
+  </div>
+</div>
+
+<!-- Универсальное модальное окно -->
+<div id="modal" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="modalTitle">Заголовок</h2>
+      <button class="warn" id="modalClose" style="margin-top:0">Закрыть</button>
+    </div>
+    <p class="muted" id="modalHint"></p>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   ХРАНИЛИЩЕ
+   ============================================================ */
+const LS_TEACHERS = 'files_folders_teachers_v3';
+const LS_RESULTS  = 'files_folders_results_v3';
+
+const getTeachers = () => { try { return JSON.parse(localStorage.getItem(LS_TEACHERS)) || []; } catch(e){ return []; } };
+const saveTeachers = (arr) => localStorage.setItem(LS_TEACHERS, JSON.stringify(arr));
+const getResults = () => { try { return JSON.parse(localStorage.getItem(LS_RESULTS)) || []; } catch(e){ return []; } };
+const saveResults = (arr) => localStorage.setItem(LS_RESULTS, JSON.stringify(arr));
+
+(function ensureDemoTeacher() {
+  const t = getTeachers();
+  if (t.length === 0) {
+    t.push({ id: 'demo-teacher', name: 'Демо-учитель', login: 'teacher', pass: 'teacher', created: new Date().toISOString() });
+    saveTeachers(t);
+  }
+})();
+
+const genId = () => 't_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
+
+/* ============================================================
+   УТИЛИТЫ
+   ============================================================ */
+const rnd = (n) => Math.floor(Math.random() * n);
+const pick = (arr) => arr[rnd(arr.length)];
+const shuffle = (arr) => {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = rnd(i + 1); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+};
+const randInt = (min, max) => min + rnd(max - min + 1);
+const esc = (s) => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $ = (id) => document.getElementById(id);
+
+/* ============================================================
+   МОДЕЛЬ ФАЙЛОВОЙ СИСТЕМЫ
+   ============================================================ */
+function generateTree() {
+  const images = ['IMG_1024.jpg','IMG_2048.jpg','Photo.png','Рисунок.bmp','Схема.jpg','Отпуск.jpeg','Кот.jpg','Фото.png'];
+  const docs = ['Реферат.docx','Доклад.docx','Конспект.txt','Сочинение.doc','Отчёт.docx','Письмо.txt','Расписание.txt'];
+  const music = ['Track01.mp3','Song.mp3','Мелодия.wav'];
+  const vids = ['Video.mp4','Клип.avi','Фильм.mkv'];
+  const programs = ['setup.exe','game.exe','Office.exe'];
+
+  const topNames = shuffle(['Документы','Изображения','Музыка','Видео','Загрузки','Рабочий стол','Программы','Проект']).slice(0, randInt(4, 6));
+  const top = {};
+
+  topNames.forEach(name => {
+    top[name] = { type: 'folder', children: {} };
+    const ch = top[name].children;
+    if (name === 'Документы') {
+      shuffle(docs).slice(0, randInt(2, 4)).forEach(f => { ch[f] = { type: 'file' }; });
+      ch['Личное'] = { type: 'folder', children: {} };
+      shuffle(docs).slice(0, 2).forEach(f => { ch['Личное'].children[f] = { type: 'file' }; });
+      if (Math.random() < 0.5) {
+        ch['Личное'].children['Секретно'] = { type: 'folder', children: { 'Пароли.txt': { type: 'file' } } };
+      }
+    } else if (name === 'Изображения') {
+      shuffle(images).slice(0, randInt(2, 5)).forEach(f => { ch[f] = { type: 'file' }; });
+      ch['Альбом'] = { type: 'folder', children: { 'Foto1.jpg': { type: 'file' }, 'Foto2.png': { type: 'file' } } };
+    } else if (name === 'Музыка') {
+      shuffle(music).slice(0, randInt(1, 3)).forEach(f => { ch[f] = { type: 'file' }; });
+    } else if (name === 'Видео') {
+      shuffle(vids).slice(0, randInt(1, 2)).forEach(f => { ch[f] = { type: 'file' }; });
+    } else if (name === 'Загрузки') {
+      shuffle([...images, ...docs]).slice(0, randInt(1, 4)).forEach(f => { ch[f] = { type: 'file' }; });
+      ch['Архив'] = { type: 'folder', children: { 'data.zip': { type: 'file' } } };
+    } else if (name === 'Рабочий стол') {
+      ch['Мой компьютер.txt'] = { type: 'file' };
+      ch['Ярлыки'] = { type: 'folder', children: {} };
+    } else if (name === 'Программы') {
+      shuffle(programs).slice(0, 2).forEach(f => { ch[f] = { type: 'file' }; });
+    } else {
+      ch['index.html'] = { type: 'file' };
+      ch['style.css'] = { type: 'file' };
+      ch['images'] = { type: 'folder', children: { 'logo.png': { type: 'file' } } };
+    }
+  });
+
+  return { type: 'folder', children: top };
+}
+
+function collectFiles(node, pathParts = []) {
+  const result = [];
+  for (const name in node.children) {
+    const ch = node.children[name];
+    const p = [...pathParts, name];
+    if (ch.type === 'file') result.push({ name, path: p });
+    else result.push(...collectFiles(ch, p));
+  }
+  return result;
+}
+function collectFolders(node, pathParts = []) {
+  const result = [];
+  for (const name in node.children) {
+    const ch = node.children[name];
+    const p = [...pathParts, name];
+    if (ch.type === 'folder') { result.push({ name, path: p }); result.push(...collectFolders(ch, p)); }
+  }
+  return result;
+}
+const pathToString = (parts) => parts.join('\\');
+
+/* ============================================================
+   ВИДЖЕТ ФАЙЛОВОГО МЕНЕДЖЕРА
+   ============================================================ */
+class FileManager {
+  constructor(host, root, opts = {}) {
+    this.host = host;
+    this.root = root;
+    this.opts = opts;
+    this.mode = opts.mode || 'navigate';
+    this.cwd = opts.startPath ? opts.startPath.slice() : [];
+    this.selected = null;
+    this.render();
+  }
+  getNode(parts) {
+    let n = this.root;
+    for (const p of parts) { n = n.children[p]; if (!n) return null; }
+    return n;
+  }
+  render() {
+    const node = this.getNode(this.cwd);
+    const h = [];
+    h.push('<div class="fm">');
+    h.push('<div class="fm-path">');
+    h.push(`<span class="crumb ${this.cwd.length===0?'cur':''}" data-nav="0">🖥️ Мой компьютер</span>`);
+    this.cwd.forEach((p, i) => {
+      h.push('<span>▸</span>');
+      const cur = i === this.cwd.length - 1;
+      h.push(`<span class="crumb ${cur?'cur':''}" data-nav="${i+1}">${esc(p)}</span>`);
+    });
+    h.push('</div>');
+
+    h.push('<div class="fm-body">');
+    h.push('<div class="fm-side">');
+    h.push('<div class="muted" style="cursor:default;font-size:.78rem;padding:2px 9px">Быстрый доступ</div>');
+    h.push(`<div class="${this.cwd.length===0?'active':''}" data-nav="0">🖥️ Мой компьютер</div>`);
+    const rootFolders = Object.keys(this.root.children).filter(k => this.root.children[k].type === 'folder');
+    rootFolders.forEach(f => {
+      h.push(`<div class="${this.cwd[0]===f?'active':''}" data-navroot="${esc(f)}">📁 ${esc(f)}</div>`);
+    });
+    h.push('</div>');
+
+    h.push('<div class="fm-main">');
+    const entries = Object.keys(node.children || {}).sort((a,b) => {
+      const A = node.children[a], B = node.children[b];
+      if (A.type !== B.type) return A.type === 'folder' ? -1 : 1;
+      return a.localeCompare(b);
+    });
+    if (entries.length === 0) h.push('<div class="fm-empty">Папка пуста</div>');
+    entries.forEach(name => {
+      const ch = node.children[name];
+      const isFolder = ch.type === 'folder';
+      const sel = this.selected && this.selected.name === name && this.selected.pathKey === this.pathKey(this.cwd);
+      h.push(`<div class="item ${sel?'sel':''}" data-name="${esc(name)}">
+        <span class="ico">${isFolder ? '📁' : '📄'}</span>
+        <span class="nm">${esc(name)}</span>
+      </div>`);
+    });
+    h.push('</div></div>');
+
+    if (this.mode === 'manage') {
+      h.push('<div class="fm-actions">');
+      h.push('<button data-act="newfolder">📁 Создать папку</button>');
+      h.push('<button data-act="newfile">📄 Создать файл</button>');
+      h.push('<button data-act="rename" class="ghost">✏️ Переименовать</button>');
+      h.push('<button data-act="delete" class="warn">🗑 Удалить</button>');
+      h.push('</div>');
+    }
+    h.push('</div>');
+    this.host.innerHTML = h.join('');
+    this.bind();
+  }
+  pathKey(parts) { return parts.join('/'); }
+  bind() {
+    this.host.querySelectorAll('[data-nav]').forEach(el => {
+      el.onclick = () => {
+        const n = +el.dataset.nav;
+        this.cwd = this.cwd.slice(0, n);
+        this.selected = null;
+        this.render();
+        if (this.opts.onNavigate) this.opts.onNavigate(this.cwd);
+      };
+    });
+    this.host.querySelectorAll('[data-navroot]').forEach(el => {
+      el.onclick = () => {
+        this.cwd = [el.dataset.navroot];
+        this.selected = null;
+        this.render();
+        if (this.opts.onNavigate) this.opts.onNavigate(this.cwd);
+      };
+    });
+    this.host.querySelectorAll('.item').forEach(el => {
+      el.onclick = () => {
+        const name = el.dataset.name;
+        const node = this.getNode(this.cwd).children[name];
+        const isFolder = node.type === 'folder';
+        this.selected = { name, node, isFolder, pathKey: this.pathKey(this.cwd) };
+        this.host.querySelectorAll('.item').forEach(x => x.classList.remove('sel'));
+        el.classList.add('sel');
+        if (this.mode === 'select-folder' && isFolder && this.opts.onSelect) this.opts.onSelect([...this.cwd, name], node);
+        if (this.mode === 'select-file' && !isFolder && this.opts.onSelect) this.opts.onSelect([...this.cwd, name], node);
+        if (this.opts.onSelectAny) this.opts.onSelectAny([...this.cwd, name], node);
+      };
+      el.ondblclick = () => {
+        const name = el.dataset.name;
+        const node = this.getNode(this.cwd).children[name];
+        if (node.type === 'folder') {
+          this.cwd.push(name);
+          this.selected = null;
+          this.render();
+          if (this.opts.onNavigate) this.opts.onNavigate(this.cwd);
+        }
+      };
+    });
+    this.host.querySelectorAll('[data-act]').forEach(btn => {
+      btn.onclick = () => this.handleAction(btn.dataset.act);
+    });
+  }
+  handleAction(act) {
+    const node = this.getNode(this.cwd);
+    if (act === 'newfolder' || act === 'newfile') {
+      const base = act === 'newfolder' ? 'Новая папка' : 'Новый файл.txt';
+      const used = new Set(Object.keys(node.children));
+      let name = base, i = 2;
+      while (used.has(name)) { name = act === 'newfolder' ? `Новая папка ${i}` : `Новый файл ${i}.txt`; i++; }
+      node.children[name] = act === 'newfolder' ? { type: 'folder', children: {} } : { type: 'file' };
+      this.render();
+      if (this.opts.onChange) this.opts.onChange();
+    } else if (act === 'rename') {
+      if (!this.selected || this.selected.pathKey !== this.pathKey(this.cwd)) { alert('Сначала выберите объект'); return; }
+      const oldName = this.selected.name;
+      const nn = prompt('Новое имя:', oldName);
+      if (!nn || nn === oldName) return;
+      if (node.children[nn]) { alert('Объект с таким именем уже существует'); return; }
+      node.children[nn] = node.children[oldName];
+      delete node.children[oldName];
+      this.selected = null;
+      this.render();
+      if (this.opts.onChange) this.opts.onChange();
+    } else if (act === 'delete') {
+      if (!this.selected || this.selected.pathKey !== this.pathKey(this.cwd)) { alert('Сначала выберите объект'); return; }
+      if (!confirm(`Удалить «${this.selected.name}»?`)) return;
+      delete node.children[this.selected.name];
+      this.selected = null;
+      this.render();
+      if (this.opts.onChange) this.opts.onChange();
+    }
+  }
+  goTo(pathParts) { this.cwd = pathParts.slice(); this.selected = null; this.render(); }
+}
+
+/* ============================================================
+   ТЕОРИЯ
+   ============================================================ */
+function getTheoryHTML() {
+  return `
+  <div class="theory">
+    <p><b>Файлы и папки</b> — это способ хранить информацию на компьютере удобно и упорядоченно.
+    Вся информация на диске компьютера хранится в виде <b>файлов</b>, которые лежат в <b>папках</b>.</p>
+
+    <h3>1. Файл</h3>
+    <p><b>Файл</b> — это поименованная область на диске, в которой хранятся данные (текст, картинка, музыка, программа и т. п.).
+    Каждый файл имеет <b>имя</b> и <b>расширение</b>, между ними ставится точка.</p>
+    <div class="example">
+      Пример: <code>Реферат.docx</code><br>
+      <code>Реферат</code> — имя файла, <code>.docx</code> — расширение.
+    </div>
+
+    <h3>2. Расширение и тип файла</h3>
+    <p><b>Расширение</b> показывает, какого типа (формата) файл. По расширению программа понимает, чем открыть файл.</p>
+    <ul>
+      <li><code>.txt</code>, <code>.doc</code>, <code>.docx</code> — текстовые документы;</li>
+      <li><code>.jpg</code>, <code>.png</code>, <code>.bmp</code>, <code>.gif</code> — изображения;</li>
+      <li><code>.mp3</code>, <code>.wav</code> — звук;</li>
+      <li><code>.mp4</code>, <code>.avi</code>, <code>.mkv</code> — видео;</li>
+      <li><code>.exe</code> — программы;</li>
+      <li><code>.zip</code>, <code>.rar</code> — архивы.</li>
+    </ul>
+
+    <h3>3. Папка (каталог)</h3>
+    <p><b>Папка</b> (каталог) — это «контейнер» для файлов и других папок. Папка нужна для того, чтобы наводить порядок:
+    раскладывать файлы по темам, проектам, типам.</p>
+    <p>Папки могут быть <b>вложенными</b>: одна папка внутри другой. Так образуется <b>дерево папок</b>.</p>
+    <div class="tree">Мой компьютер
+└── Документы
+    ├── Реферат.docx
+    └── Личное
+        └── Письмо.txt</div>
+
+    <h3>4. Полный путь к файлу</h3>
+    <p><b>Полный путь</b> к файлу — это все папки от корня до файла, записанные через разделитель, и имя файла.
+    В Windows разделитель — <b>обратный слэш</b> <code>\\</code>.</p>
+    <div class="important">
+      <b>Полный путь = диск (или корень) → папка → вложенная папка → … → файл</b><br>
+      Пример: <code>Документы\\Личное\\Письмо.txt</code>
+    </div>
+    <p>Полный путь позволяет <b>однозначно</b> указать, где именно лежит файл, даже если в разных папках есть файлы с одинаковыми именами.</p>
+
+    <h3>5. Действия с файлами и папками</h3>
+    <ul>
+      <li><b>Создать</b> файл или папку;</li>
+      <li><b>Открыть</b> (войти в папку, запустить файл);</li>
+      <li><b>Переименовать</b>;</li>
+      <li><b>Копировать</b> и <b>переместить</b>;</li>
+      <li><b>Удалить</b> (в корзину или безвозвратно);</li>
+      <li><b>Искать</b> по имени;</li>
+      <li><b>Свойства</b>: размер, дата создания, тип.</li>
+    </ul>
+
+    <h3>6. Важные правила</h3>
+    <ul>
+      <li>В одной папке <b>не может быть</b> двух объектов с одинаковыми именами;</li>
+      <li>Имя файлу даёт пользователь, расширение обычно добавляется автоматически программой;</li>
+      <li>Нельзя удалять системные папки и файлы без разрешения;</li>
+      <li>Чтобы не запутаться, создавайте папки по темам (например, «Учёба», «Фото», «Игры»).</li>
+    </ul>
+
+    <h3>7. Как читать путь — пример</h3>
+    <div class="example">
+      <code>Изображения\\Альбом\\Foto1.jpg</code><br>
+      Читаем так: в корне есть папка «Изображения», внутри неё — папка «Альбом», а в ней лежит файл «Foto1.jpg».
+    </div>
+
+    <h3>8. Проверь себя</h3>
+    <ul>
+      <li>Что такое файл?</li>
+      <li>Что показывает расширение файла?</li>
+      <li>Что такое папка и зачем она нужна?</li>
+      <li>Что такое полный путь к файлу?</li>
+      <li>Как записывается путь к файлу в Windows?</li>
+    </ul>
+  </div>`;
+}
+
+function openTheory() {
+  $('modalTitle').textContent = '📚 Теория: файлы и папки';
+  $('modalHint').textContent = 'Краткий конспект по теме «Файлы и папки» для 7 класса.';
+  $('modalBody').innerHTML = getTheoryHTML();
+  $('modal').classList.remove('hidden');
+}
+
+/* ============================================================
+   ПРИЛОЖЕНИЕ
+   ============================================================ */
+const app = {
+  role: null,
+  studentName: '',
+  studentTeacherId: null,
+  studentTeacherName: '',
+  teacher: null,
+  mode: null,
+  trainRoot: null, trainTasks: [], trainIndex: 0, trainScore: 0, trainAnswers: [],
+  testRoot: null, testTasks: [], testIndex: 0, testCorrect: 0, testAnswers: [],
+  fm: null,
+  helperFm: null,
+  testHelperFm: null,
+};
+
+const screens = {
+  login: $('screen-login'),
+  mode: $('screen-mode'),
+  train: $('screen-train'),
+  trainFinal: $('screen-trainFinal'),
+  test: $('screen-test'),
+  testFinal: $('screen-testFinal'),
+  teacher: $('screen-teacher')
+};
+const show = (name) => {
+  Object.values(screens).forEach(s => s.classList.add('hidden'));
+  if (name) screens[name].classList.remove('hidden');
+};
+
+$('modalClose').onclick = () => { $('modal').classList.add('hidden'); $('modalBody').innerHTML = ''; };
+
+/* ---------- ВКЛАДКИ ВХОДА ---------- */
+$('tabStudent').onclick = () => {
+  $('tabStudent').classList.add('active'); $('tabTeacher').classList.remove('active');
+  $('loginStudent').classList.remove('hidden'); $('loginTeacher').classList.add('hidden');
+};
+$('tabTeacher').onclick = () => {
+  $('tabTeacher').classList.add('active'); $('tabStudent').classList.remove('active');
+  $('loginTeacher').classList.remove('hidden'); $('loginStudent').classList.add('hidden');
+  refreshTeacherLoginList();
+};
+$('tabTeacherLogin').onclick = () => {
+  $('tabTeacherLogin').classList.add('active'); $('tabTeacherReg').classList.remove('active');
+  $('teacherLoginBlock').classList.remove('hidden'); $('teacherRegBlock').classList.add('hidden');
+};
+$('tabTeacherReg').onclick = () => {
+  $('tabTeacherReg').classList.add('active'); $('tabTeacherLogin').classList.remove('active');
+  $('teacherRegBlock').classList.remove('hidden'); $('teacherLoginBlock').classList.add('hidden');
+};
+
+function refreshTeacherLoginList() {
+  const teachers = getTeachers();
+  const sel = $('teacherSelect');
+  if (!sel) return;
+  sel.innerHTML = '';
+  if (teachers.length === 0) {
+    $('noTeachersMsg').style.display = 'block';
+    $('btnStart').disabled = true;
+  } else {
+    $('noTeachersMsg').style.display = 'none';
+    $('btnStart').disabled = false;
+    teachers.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t.id;
+      opt.textContent = t.name + (t.login ? ` (${t.login})` : '');
+      sel.appendChild(opt);
+    });
+  }
+}
+refreshTeacherLoginList();
+
+/* ---------- ТЕОРИЯ: КНОПКИ ---------- */
+$('btnTheoryFromLogin').onclick = openTheory;
+$('btnTheory').onclick = openTheory;
+$('btnTheoryInTrain').onclick = openTheory;
+$('btnTheoryInTest').onclick = openTheory;
+$('btnTheoryTeacher').onclick = openTheory;
+
+/* ---------- РЕГИСТРАЦИЯ / ВХОД УЧИТЕЛЯ ---------- */
+$('btnTeacherReg').onclick = () => {
+  const name = $('rName').value.trim();
+  const login = $('rLogin').value.trim().toLowerCase();
+  const pass = $('rPass').value;
+  $('regErr').textContent = ''; $('regOk').textContent = '';
+  if (name.length < 2) { $('regErr').textContent = 'Введите ФИО учителя.'; return; }
+  if (!/^[a-z0-9_]{3,}$/.test(login)) { $('regErr').textContent = 'Логин: латиница/цифры, минимум 3 символа.'; return; }
+  if (pass.length < 3) { $('regErr').textContent = 'Пароль: минимум 3 символа.'; return; }
+  const teachers = getTeachers();
+  if (teachers.some(t => t.login === login)) { $('regErr').textContent = 'Такой логин уже занят.'; return; }
+  const t = { id: genId(), name, login, pass, created: new Date().toISOString() };
+  teachers.push(t);
+  saveTeachers(teachers);
+  $('regOk').textContent = `Аккаунт создан! Теперь войдите с логином «${login}».`;
+  $('rName').value = ''; $('rLogin').value = ''; $('rPass').value = '';
+  refreshTeacherLoginList();
+};
+
+$('btnTeacherLogin').onclick = () => {
+  const login = $('tLogin').value.trim().toLowerCase();
+  const pass = $('tPass').value;
+  $('loginErrT').textContent = '';
+  const t = getTeachers().find(x => x.login === login && x.pass === pass);
+  if (!t) { $('loginErrT').textContent = 'Неверный логин или пароль.'; return; }
+  app.role = 'teacher';
+  app.teacher = t;
+  $('userBadge').classList.remove('hidden');
+  $('userBadge').textContent = '👩‍🏫 ' + t.name;
+  $('teacherWho').textContent = 'Учитель: ' + t.name + ' (логин: ' + t.login + ')';
+  show('teacher');
+  renderTeacher();
+};
+
+/* ---------- ВХОД УЧЕНИКА ---------- */
+$('btnStart').onclick = () => {
+  const name = $('studentName').value.trim();
+  const teacherId = $('teacherSelect').value;
+  if (name.length < 2) { $('loginErr').textContent = 'Введите имя (минимум 2 символа).'; return; }
+  if (!teacherId) { $('loginErr').textContent = 'Выберите учителя.'; return; }
+  const teachers = getTeachers();
+  const t = teachers.find(x => x.id === teacherId);
+  if (!t) { $('loginErr').textContent = 'Учитель не найден.'; return; }
+  $('loginErr').textContent = '';
+  app.role = 'student';
+  app.studentName = name;
+  app.studentTeacherId = teacherId;
+  app.studentTeacherName = t.name;
+  $('userBadge').classList.remove('hidden');
+  $('userBadge').textContent = '👨‍🎓 ' + name + ' · учитель: ' + t.name;
+  $('modeHello').textContent = `Привет, ${name}! Твой учитель: ${t.name}.`;
+  show('mode');
+};
+
+$('btnExitMode').onclick = () => location.reload();
+$('btnExitTeacher').onclick = () => location.reload();
+$('btnBackToModes').onclick = () => show('mode');
+$('btnBackToModes2').onclick = () => show('mode');
+
+/* ---------- СВОБОДНЫЙ СИМУЛЯТОР ---------- */
+$('btnSandboxStudent').onclick = () => {
+  const root = generateTree();
+  $('modalTitle').textContent = 'Свободный симулятор файловой системы';
+  $('modalHint').textContent = 'Двойной клик по папке — войти внутрь. Клик по файлу — выделить. Сверху виден полный путь. Создавайте, переименовывайте и удаляйте объекты кнопками внизу.';
+  const body = $('modalBody');
+  body.innerHTML = '';
+  const host = document.createElement('div');
+  body.appendChild(host);
+  new FileManager(host, root, { mode: 'manage' });
+  $('modal').classList.remove('hidden');
+};
+
+/* ---------- ТРЕНИРОВКА ---------- */
+$('btnTrain').onclick = () => startTraining();
+
+function makeTrainingTasks() {
+  const root = generateTree();
+  const files = collectFiles(root);
+  const folders = collectFolders(root);
+  const tasks = [];
+  const usedTargets = new Set();
+
+  const pickFile = (minDepth = 1) => {
+    const pool = files.filter(f => f.path.length >= minDepth && !usedTargets.has('f:'+f.path.join('/')));
+    const f = pick(pool.length ? pool : files);
+    usedTargets.add('f:'+f.path.join('/'));
+    return f;
+  };
+  const pickFolder = (minDepth = 1) => {
+    const pool = folders.filter(f => f.path.length >= minDepth && !usedTargets.has('d:'+f.path.join('/')));
+    const f = pick(pool.length ? pool : folders);
+    usedTargets.add('d:'+f.path.join('/'));
+    return f;
+  };
+
+  for (let i = 0; i < 6; i++) {
+    const f = pickFile(2);
+    const full = pathToString(f.path);
+    tasks.push({
+      kind: 'simFile',
+      title: `Задание ${i+1}. Найди файл в симуляторе`,
+      desc: `В симуляторе откройте нужные папки и выделите файл <b>${esc(f.name)}</b>.<br>Полный путь: <span class="path-highlight">${esc(full)}</span>`,
+      targetName: f.name, targetPath: f.path,
+      correctText: `Открыть папку ${pathToString(f.path.slice(0,-1))} и выделить файл ${f.name} (полный путь: ${full})`,
+      root
+    });
+  }
+  for (let i = 0; i < 4; i++) {
+    const d = pickFolder(2);
+    const full = pathToString(d.path);
+    tasks.push({
+      kind: 'simFolder',
+      title: `Задание ${i+7}. Перейди в папку`,
+      desc: `Перейдите в симуляторе в папку: <b>${esc(d.name)}</b>.<br>Полный путь: <span class="path-highlight">${esc(full)}</span><br>Нажмите «Проверить», находясь внутри этой папки.`,
+      targetPath: d.path,
+      correctText: `Открыть папку ${full}`,
+      root
+    });
+  }
+  for (let i = 0; i < 3; i++) {
+    const d = pickFolder(1);
+    const needFolder = Math.random() < 0.5;
+    const full = pathToString(d.path);
+    tasks.push({
+      kind: 'simCreate',
+      title: `Задание ${i+11}. Практика: создание объекта`,
+      desc: needFolder
+        ? `Перейдите в папку <b>${esc(full)}</b> и создайте в ней папку <b>Моя_папка</b>.<br>После создания путь будет: <span class="path-highlight">${esc(full + '\\Моя_папка')}</span>`
+        : `Перейдите в папку <b>${esc(full)}</b> и создайте в ней файл <b>Заметка.txt</b>.<br>После создания путь будет: <span class="path-highlight">${esc(full + '\\Заметка.txt')}</span>`,
+      targetPath: d.path, needFolder,
+      correctText: needFolder ? `В папке ${full} создать папку «Моя_папка»` : `В папке ${full} создать файл «Заметка.txt»`,
+      root,
+      checks: (rootFS) => {
+        let n = rootFS;
+        for (const x of d.path) { n = n.children[x]; if (!n) return { ok:false, msg:'Папка не найдена.' }; }
+        if (needFolder) {
+          const has = Object.keys(n.children).some(k => n.children[k].type==='folder' && k.toLowerCase()==='моя_папка');
+          return { ok: has, msg: has ? 'Всё верно!' : 'Папка «Моя_папка» не создана.' };
+        } else {
+          const has = Object.keys(n.children).some(k => n.children[k].type==='file' && k.toLowerCase()==='заметка.txt');
+          return { ok: has, msg: has ? 'Всё верно!' : 'Файл «Заметка.txt» не создан.' };
+        }
+      }
+    });
+  }
+  for (let i = 0; i < 3; i++) {
+    const f = pickFile(2);
+    const folderFull = pathToString(f.path.slice(0,-1));
+    const targetFull = folderFull + '\\Новое_имя.txt';
+    tasks.push({
+      kind: 'simRename',
+      title: `Задание ${i+14}. Практика: переименование`,
+      desc: `Перейдите в папку <b>${esc(folderFull)}</b>, выделите файл <b>${esc(f.name)}</b> и переименуйте его в <b>Новое_имя.txt</b>.<br>Исходный файл: <span class="path-highlight">${esc(pathToString(f.path))}</span><br>После переименования путь будет: <span class="path-highlight">${esc(targetFull)}</span>`,
+      correctText: `В папке ${folderFull} переименовать файл «${f.name}» в «Новое_имя.txt»`,
+      root,
+      checks: (rootFS) => {
+        let n = rootFS;
+        for (const x of f.path.slice(0,-1)) { n = n.children[x]; if (!n) return { ok:false, msg:'Папка не найдена.' }; }
+        const newName = Object.keys(n.children).find(k => k.toLowerCase() === 'новое_имя.txt' && n.children[k].type === 'file');
+        return { ok: !!newName, msg: newName ? 'Отлично! Файл переименован.' : 'Файл «Новое_имя.txt» не найден.' };
+      }
+    });
+  }
+  for (let i = 0; i < 2; i++) {
+    const f = pickFile(2);
+    tasks.push({
+      kind: 'order',
+      title: `Задание ${i+17}. Собери путь по порядку`,
+      desc: `Расставьте элементы пути к файлу <b>${esc(f.name)}</b> в правильном порядке: от корня к файлу. Нажимайте на элементы по очереди.`,
+      parts: shuffle(f.path.slice()),
+      correctOrder: f.path,
+      correctText: pathToString(f.path)
+    });
+  }
+  for (let i = 0; i < 2; i++) {
+    const f = pickFile(2);
+    const correct = pathToString(f.path);
+    const wrongs = new Set();
+    let guard = 0;
+    while (wrongs.size < 3 && guard++ < 300) {
+      const g = pick(files);
+      const s = pathToString(g.path);
+      if (s !== correct) wrongs.add(s);
+    }
+    tasks.push({
+      kind: 'choicePath',
+      title: `Задание ${i+19}. Полный путь к файлу`,
+      desc: `Какой полный путь соответствует файлу <b>${esc(f.name)}</b>? (Можно подсмотреть в симуляторе — кнопка сверху.)`,
+      options: shuffle([correct, ...wrongs]),
+      correct, correctText: correct
+    });
+  }
+  return { root, tasks };
+}
+
+function startTraining() {
+  const { root, tasks } = makeTrainingTasks();
+  app.mode = 'train';
+  app.trainRoot = root;
+  app.trainTasks = tasks.map(t => ({ ...t, _finalized: false }));
+  app.trainIndex = 0;
+  app.trainScore = 0;
+  app.trainAnswers = [];
+  show('train');
+  $('helperSim').classList.add('hidden');
+  $('btnOpenHelper').textContent = '🔍 Открыть симулятор (подсмотреть путь)';
+  renderTrainingTask();
+}
+
+function renderTrainingTask() {
+  if (app.trainIndex >= app.trainTasks.length) return finishTraining();
+  const t = app.trainTasks[app.trainIndex];
+  $('taskTitle').innerHTML = t.title;
+  $('taskDesc').innerHTML = t.desc;
+  $('taskCount').textContent = `Задание ${app.trainIndex + 1} из ${app.trainTasks.length}`;
+  $('progressBar').style.width = (app.trainIndex / app.trainTasks.length * 100) + '%';
+  $('scoreLive').textContent = `Баллы: ${app.trainScore}`;
+  $('feedback').classList.add('hidden');
+  $('feedback').innerHTML = '';
+  $('btnCheck').classList.remove('hidden');
+  $('btnCheck').disabled = false;
+  $('btnNext').classList.add('hidden');
+  $('btnSkip').classList.remove('hidden');
+  $('helperHint').textContent = '';
+
+  const area = $('taskArea');
+  area.innerHTML = '';
+  app.fm = null;
+
+  if (t.kind === 'choice' || t.kind === 'choicePath') {
+    const wrap = document.createElement('div');
+    wrap.style.display = 'flex'; wrap.style.flexDirection = 'column'; wrap.style.gap = '8px';
+    t.options.forEach(o => {
+      const b = document.createElement('button');
+      b.className = 'ghost'; b.style.textAlign = 'left'; b.textContent = o;
+      b.onclick = () => {
+        wrap.querySelectorAll('button').forEach(x => x.classList.remove('good'));
+        b.classList.add('good');
+        t._selected = o;
+      };
+      wrap.appendChild(b);
+    });
+    area.appendChild(wrap);
+  } else if (t.kind === 'order') {
+    const wrap = document.createElement('div');
+    wrap.style.display = 'flex'; wrap.style.gap = '8px'; wrap.style.flexWrap = 'wrap';
+    t._order = [];
+    t.parts.forEach(p => {
+      const b = document.createElement('button');
+      b.className = 'ghost'; b.textContent = p;
+      b.onclick = () => {
+        if (b.classList.contains('good')) return;
+        b.classList.add('good');
+        t._order.push(p); renderChosen();
+      };
+      wrap.appendChild(b);
+    });
+    area.appendChild(wrap);
+    const chosen = document.createElement('div');
+    chosen.className = 'muted'; chosen.style.marginTop = '12px';
+    chosen.innerHTML = '<b>Ваш путь:</b> <span id="chosenList"></span>';
+    area.appendChild(chosen);
+    function renderChosen() { $('chosenList').textContent = t._order.join(' \\ '); }
+    renderChosen();
+  } else if (t.kind === 'pathInput') {
+    area.innerHTML = `<label for="pathInput">Полный путь:</label>
+      <input type="text" id="pathInput" placeholder="Например: Документы\\Отчёты\\Файл.txt" autocomplete="off">`;
+    $('pathInput').onkeydown = (e) => { if (e.key === 'Enter') checkTraining(); };
+  } else {
+    const host = document.createElement('div');
+    area.appendChild(host);
+    t._fmRoot = t.root;
+    const opts = { mode: (t.kind === 'simFile' || t.kind === 'simFolder') ? 'navigate' : 'manage' };
+    app.fm = new FileManager(host, t._fmRoot, opts);
+    t._host = host;
+  }
+}
+
+function cloneTree(node) {
+  const copy = { type: node.type, children: {} };
+  for (const k in node.children) copy.children[k] = cloneTree(node.children[k]);
+  if (node.name) copy.name = node.name;
+  return copy;
+}
+$('btnOpenHelper').onclick = () => {
+  const t = app.trainTasks[app.trainIndex];
+  if (!t) return;
+  const box = $('helperSim');
+  if (!box.classList.contains('hidden')) {
+    box.classList.add('hidden'); box.innerHTML = '';
+    $('btnOpenHelper').textContent = '🔍 Открыть симулятор (подсмотреть путь)';
+    return;
+  }
+  box.classList.remove('hidden'); box.innerHTML = '';
+  const hint = document.createElement('div');
+  hint.className = 'muted'; hint.style.marginBottom = '8px';
+  hint.textContent = 'Это отдельная копия файловой системы — для просмотра пути. Рабочее задание ниже не меняется.';
+  box.appendChild(hint);
+  const host = document.createElement('div');
+  box.appendChild(host);
+  app.helperFm = new FileManager(host, cloneTree(t.root), { mode: 'navigate' });
+  $('btnOpenHelper').textContent = '🙈 Скрыть симулятор';
+};
+
+function checkTraining() {
+  const t = app.trainTasks[app.trainIndex];
+  if (!t || t._finalized) return;
+  let ok = false;
+  let userAnswer = '';
+
+  if (t.kind === 'choice' || t.kind === 'choicePath') {
+    if (!t._selected) { showFeedback(false, 'Выберите вариант ответа.'); return; }
+    userAnswer = t._selected; ok = t._selected === t.correct;
+  } else if (t.kind === 'order') {
+    if (!t._order || t._order.length !== t.correctOrder.length) { showFeedback(false, 'Выберите все элементы пути.'); return; }
+    userAnswer = t._order.join('\\');
+    ok = JSON.stringify(t._order) === JSON.stringify(t.correctOrder);
+  } else if (t.kind === 'pathInput') {
+    const val = $('pathInput').value.trim();
+    if (!val) { showFeedback(false, 'Введите путь.'); return; }
+    userAnswer = val;
+    const norm = s => s.replace(/\//g, '\\').replace(/\s+/g, '').toLowerCase();
+    ok = norm(val) === norm(pathToString(t.correctPath));
+  } else if (t.kind === 'simFile') {
+    if (!app.fm || !app.fm.selected) { showFeedback(false, 'Выделите файл в симуляторе.'); return; }
+    if (app.fm.selected.node.type !== 'file') { showFeedback(false, 'Нужно выделить файл.'); return; }
+    const full = [...app.fm.cwd, app.fm.selected.name];
+    userAnswer = pathToString(full);
+    ok = full.join('/') === t.targetPath.join('/');
+  } else if (t.kind === 'simFolder') {
+    userAnswer = pathToString(app.fm.cwd);
+    ok = app.fm.cwd.join('/') === t.targetPath.join('/');
+  } else if (t.kind === 'simCreate' || t.kind === 'simRename') {
+    const res = t.checks(t._fmRoot);
+    userAnswer = res.ok ? 'выполнено' : res.msg;
+    ok = res.ok;
+    if (!ok) { showFeedback(false, res.msg); finalizeTrainAnswer(t, false, userAnswer); return; }
+  }
+
+  t._lastAnswer = userAnswer;
+  finalizeTrainAnswer(t, ok, userAnswer);
+}
+
+function showTrainCorrectAnswer(t, ok) {
+  const fb = $('feedback');
+  fb.classList.remove('hidden');
+  fb.classList.add(ok ? 'ok' : 'bad');
+  const correctText = t.correctText || getCorrectTextTrain(t) || '—';
+  fb.innerHTML = (ok ? '✅ Верно!' : '❌ Неверно.') +
+    `<div class="correct-answer"><b>Правильный ответ:</b> ${esc(correctText)}</div>`;
+}
+function getCorrectTextTrain(t) {
+  if (t.correct) return t.correct;
+  if (t.correctOrder) return t.correctOrder.join('\\');
+  if (t.correctPath) return pathToString(t.correctPath);
+  if (t.targetPath) return pathToString(t.targetPath);
+  return '';
+}
+function finalizeTrainAnswer(t, ok, userAnswer) {
+  if (t._finalized) return;
+  t._finalized = true;
+  if (ok) app.trainScore++;
+  app.trainAnswers.push({ title: t.title, correct: ok, userAnswer, correctAnswer: t.correctText || getCorrectTextTrain(t) });
+  showTrainCorrectAnswer(t, ok);
+  $('btnCheck').disabled = true;
+  $('btnNext').classList.remove('hidden');
+  $('btnSkip').classList.add('hidden');
+  $('progressBar').style.width = ((app.trainIndex + 1) / app.trainTasks.length * 100) + '%';
+  $('scoreLive').textContent = `Баллы: ${app.trainScore}`;
+}
+function showFeedback(ok, text) {
+  const el = $('feedback');
+  el.classList.remove('hidden', 'ok', 'bad');
+  el.classList.add(ok ? 'ok' : 'bad');
+  el.innerHTML = text;
+}
+
+$('btnCheck').onclick = checkTraining;
+$('btnNext').onclick = () => {
+  app.trainIndex++;
+  if (app.trainIndex >= app.trainTasks.length) finishTraining();
+  else renderTrainingTask();
+};
+$('btnSkip').onclick = () => {
+  const t = app.trainTasks[app.trainIndex];
+  if (!t || t._finalized) return;
+  t._lastAnswer = '(пропущено)';
+  finalizeTrainAnswer(t, false, '(пропущено)');
+};
+$('btnExitTrain').onclick = () => { if (confirm('Завершить тренировку и выйти к выбору режима?')) show('mode'); };
+
+function finishTraining() {
+  show('trainFinal');
+  const total = app.trainTasks.length;
+  const pct = Math.round(app.trainScore / total * 100);
+  $('trainFinalScore').innerHTML = `${app.trainScore} <small style="font-size:1.2rem;color:#6b7793">/ ${total}</small>`;
+  let msg;
+  if (pct >= 90) msg = 'Отлично! Вы прекрасно разбираетесь в файлах и папках.';
+  else if (pct >= 70) msg = 'Хорошо! Есть небольшие недочёты.';
+  else if (pct >= 50) msg = 'Неплохо, но стоит потренироваться ещё.';
+  else msg = 'Повторите тему и попробуйте снова.';
+  $('trainFinalMsg').textContent = msg + ` (${pct}%)`;
+  $('trainFinalList').innerHTML = app.trainAnswers.map(a => {
+    const cls = a.correct ? 'ok' : 'bad';
+    const icon = a.correct ? '✅' : '❌';
+    return `<div class="task-feedback ${cls}" style="margin-top:8px">
+      <b>${icon} ${esc(a.title)}</b><br>
+      Ваш ответ: ${esc(a.userAnswer || '—')}<br>
+      Правильно: ${esc(a.correctAnswer || '—')}
+    </div>`;
+  }).join('');
+  saveResult({ mode:'train', score: app.trainScore, total, pct, answers: app.trainAnswers });
+}
+$('btnTrainAgain').onclick = () => startTraining();
+
+/* ---------- ТЕСТ ---------- */
+$('btnTest').onclick = () => startTest();
+
+function makeTestTasks() {
+  const root = generateTree();
+  const files = collectFiles(root);
+  const folders = collectFolders(root);
+  const tasks = [];
+
+  {
+    const f = pick(files);
+    const variants = shuffle([f.name, ...shuffle(files.filter(x => x.name !== f.name)).slice(0,3).map(x => x.name)]);
+    tasks.push({ kind:'choice', title:'Вопрос 1', desc:`Выберите файл с именем <b>${esc(f.name)}</b>.`, options: variants, correct: f.name, explain:`«${esc(f.name)}» — это файл.`, root });
+  }
+  {
+    const f = pick(files.filter(x => x.path.length >= 2));
+    const correct = pathToString(f.path);
+    const wrongs = new Set();
+    let g = 0;
+    while (wrongs.size < 3 && g++ < 300) { const s = pathToString(pick(files).path); if (s !== correct) wrongs.add(s); }
+    tasks.push({ kind:'choice', title:'Вопрос 2', desc:`Какой полный путь соответствует файлу <b>${esc(f.name)}</b>?`, options: shuffle([correct, ...wrongs]), correct, explain:`Верный путь: ${esc(correct)}`, root });
+  }
+  {
+    const useFile = Math.random() < 0.5;
+    const item = useFile ? pick(files) : pick(folders);
+    tasks.push({ kind:'choice', title:'Вопрос 3', desc:`Чем является объект <b>${esc(item.name)}</b>?`, options:['Файл','Папка'], correct: useFile?'Файл':'Папка', explain: useFile ? 'У файла есть расширение.' : 'Это папка — контейнер.', root });
+  }
+  {
+    const f = pick(files.filter(x => x.name.includes('.')));
+    const ext = f.name.split('.').pop();
+    const all = ['txt','docx','jpg','png','mp3','mp4','exe','zip','doc','bmp','jpeg','avi','mkv','wav','html','css'];
+    const wrongs = shuffle(all.filter(e => e !== ext)).slice(0,3);
+    tasks.push({ kind:'choice', title:'Вопрос 4', desc:`Какое расширение у файла <b>${esc(f.name)}</b>?`, options: shuffle([ext, ...wrongs]), correct: ext, explain:`Расширение — часть имени после последней точки: «${esc(ext)}».`, root });
+  }
+  tasks.push({
+    kind:'choice', title:'Вопрос 5',
+    desc:'Что называют <b>полным путём</b> к файлу?',
+    options: [
+      'Все папки от корня до файла, записанные через разделитель, и имя файла',
+      'Только имя файла с расширением',
+      'Размер файла в байтах',
+      'Дата последнего изменения файла'
+    ],
+    correct: 'Все папки от корня до файла, записанные через разделитель, и имя файла',
+    explain:'Полный путь однозначно указывает положение файла в файловой системе.', root
+  });
+  tasks.push({
+    kind:'choice', title:'Вопрос 6',
+    desc:'Что показывает <b>расширение</b> имени файла?',
+    options: ['Тип (формат) файла', 'Размер файла', 'Имя автора', 'Дату создания папки'],
+    correct: 'Тип (формат) файла',
+    explain:'По расширению (например, .txt, .jpg, .exe) программа понимает тип файла.', root
+  });
+  {
+    const f = pick(files.filter(x => x.path.length >= 3));
+    tasks.push({
+      kind:'order', title:'Вопрос 7',
+      desc:`Соберите путь к файлу <b>${esc(f.name)}</b> по порядку: от корня к файлу.`,
+      parts: shuffle(f.path.slice()), correctOrder: f.path,
+      explain: `Правильный порядок: ${esc(pathToString(f.path))}`, root
+    });
+  }
+  {
+    const f = pick(files.filter(x => x.path.length >= 2 && x.path.length <= 4));
+    tasks.push({
+      kind:'pathInput', title:'Вопрос 8',
+      desc:`Запишите полный путь к файлу <b>${esc(f.name)}</b>. Разделитель — обратный слэш «\\».`,
+      correctPath: f.path,
+      explain:`Правильный ответ: ${esc(pathToString(f.path))}`, root
+    });
+  }
+  tasks.push({
+    kind:'choice', title:'Вопрос 9',
+    desc:'Как называется папка, которая находится внутри другой папки?',
+    options: ['Вложенная папка', 'Корневой файл', 'Расширение', 'Ярлык'],
+    correct: 'Вложенная папка',
+    explain:'Папки образуют дерево: папки внутри папок называются вложенными.', root
+  });
+  {
+    const f = pick(files.filter(x => x.path.length >= 2));
+    tasks.push({
+      kind:'simFind', title:'Вопрос 10',
+      desc:`Пользуясь симулятором, найдите и выделите файл <b>${esc(f.name)}</b>.<br>Полный путь: <span class="path-highlight">${esc(pathToString(f.path))}</span>`,
+      targetName: f.name, targetPath: f.path, root
+    });
+  }
+  return { root, tasks };
+}
+
+function startTest() {
+  const { root, tasks } = makeTestTasks();
+  app.mode = 'test';
+  app.testRoot = root;
+  app.testTasks = tasks.map(t => ({ ...t }));
+  app.testIndex = 0;
+  app.testCorrect = 0;
+  app.testAnswers = [];
+  show('test');
+  $('testSimInline').classList.add('hidden');
+  $('testSimInline').innerHTML = '';
+  $('btnTestSim').textContent = '🔍 Открыть симулятор';
+  renderTestTask();
+}
+
+/* Кнопка «Открыть симулятор» в тесте */
+$('btnTestSim').onclick = () => {
+  const t = app.testTasks[app.testIndex];
+  if (!t) return;
+  const box = $('testSimInline');
+  if (!box.classList.contains('hidden')) {
+    box.classList.add('hidden'); box.innerHTML = '';
+    $('btnTestSim').textContent = '🔍 Открыть симулятор';
+    return;
+  }
+  box.classList.remove('hidden'); box.innerHTML = '';
+  const hint = document.createElement('div');
+  hint.className = 'muted'; hint.style.marginBottom = '8px';
+  hint.textContent = 'Это копия файловой системы вопроса — можно посмотреть пути и структуру, на ответы это не влияет.';
+  box.appendChild(hint);
+  const host = document.createElement('div');
+  box.appendChild(host);
+  // Для вопросов-симуляторов используем исходное дерево, для остальных — копию
+  const tree = (t.kind === 'simFind') ? t.root : cloneTree(t.root || app.testRoot);
+  app.testHelperFm = new FileManager(host, tree, { mode: 'navigate' });
+  $('btnTestSim').textContent = '🙈 Скрыть симулятор';
+};
+
+function renderTestTask() {
+  if (app.testIndex >= app.testTasks.length) return finishTest();
+  const t = app.testTasks[app.testIndex];
+  $('testTitle').innerHTML = t.title;
+  $('testDesc').innerHTML = t.desc;
+  $('testCount').textContent = `Вопрос ${app.testIndex + 1} из ${app.testTasks.length}`;
+  $('testBar').style.width = (app.testIndex / app.testTasks.length * 100) + '%';
+  $('testFeedback').classList.add('hidden');
+  $('btnTestNext').disabled = false;
+  $('btnTestNext').textContent = (app.testIndex === app.testTasks.length - 1) ? 'Завершить тест' : 'Ответить';
+  // закрываем и сбрасываем встроенный симулятор при новом вопросе
+  $('testSimInline').classList.add('hidden'); $('testSimInline').innerHTML = '';
+  $('btnTestSim').textContent = '🔍 Открыть симулятор';
+
+  const area = $('testArea');
+  area.innerHTML = '';
+  app.fm = null;
+
+  if (t.kind === 'choice') {
+    const wrap = document.createElement('div');
+    wrap.style.display = 'flex'; wrap.style.flexDirection = 'column'; wrap.style.gap = '8px';
+    t.options.forEach(o => {
+      const b = document.createElement('button');
+      b.className = 'ghost'; b.style.textAlign = 'left'; b.textContent = o;
+      b.onclick = () => {
+        wrap.querySelectorAll('button').forEach(x => x.classList.remove('good'));
+        b.classList.add('good');
+        t._selected = o;
+      };
+      wrap.appendChild(b);
+    });
+    area.appendChild(wrap);
+  } else if (t.kind === 'order') {
+    const wrap = document.createElement('div');
+    wrap.style.display = 'flex'; wrap.style.gap = '8px'; wrap.style.flexWrap = 'wrap';
+    t._order = [];
+    t.parts.forEach(p => {
+      const b = document.createElement('button');
+      b.className = 'ghost'; b.textContent = p;
+      b.onclick = () => {
+        if (b.classList.contains('good')) return;
+        b.classList.add('good'); t._order.push(p); renderChosen();
+      };
+      wrap.appendChild(b);
+    });
+    area.appendChild(wrap);
+    const chosen = document.createElement('div');
+    chosen.className = 'muted'; chosen.style.marginTop = '12px';
+    chosen.innerHTML = '<b>Ваш путь:</b> <span id="testChosenList"></span>';
+    area.appendChild(chosen);
+    function renderChosen() { $('testChosenList').textContent = t._order.join(' \\ '); }
+    renderChosen();
+  } else if (t.kind === 'pathInput') {
+    area.innerHTML = `<label for="testPathInput">Полный путь:</label>
+      <input type="text" id="testPathInput" placeholder="Например: Документы\\Отчёты\\Файл.txt" autocomplete="off">`;
+    $('testPathInput').onkeydown = (e) => { if (e.key === 'Enter') submitTestAnswer(); };
+  } else if (t.kind === 'simFind') {
+    const host = document.createElement('div');
+    area.appendChild(host);
+    t._fmRoot = t.root;
+    app.fm = new FileManager(host, t._fmRoot, { mode: 'navigate' });
+  }
+}
+
+$('btnTestNext').onclick = submitTestAnswer;
+$('btnExitTest').onclick = () => { if (confirm('Прервать тест? Результат не будет сохранён.')) show('mode'); };
+
+function submitTestAnswer() {
+  const t = app.testTasks[app.testIndex];
+  if (t._done) {
+    app.testIndex++;
+    if (app.testIndex >= app.testTasks.length) finishTest();
+    else renderTestTask();
+    return;
+  }
+  let ok = false;
+  let userAnswer = '';
+
+  if (t.kind === 'choice') {
+    if (!t._selected) { flashTest('Выберите вариант ответа.'); return; }
+    userAnswer = t._selected; ok = t._selected === t.correct;
+  } else if (t.kind === 'order') {
+    if (!t._order || t._order.length !== t.correctOrder.length) { flashTest('Выберите все элементы пути.'); return; }
+    userAnswer = t._order.join('\\');
+    ok = JSON.stringify(t._order) === JSON.stringify(t.correctOrder);
+  } else if (t.kind === 'pathInput') {
+    const val = $('testPathInput').value.trim();
+    if (!val) { flashTest('Введите путь.'); return; }
+    userAnswer = val;
+    const norm = s => s.replace(/\//g, '\\').replace(/\s+/g, '').toLowerCase();
+    ok = norm(val) === norm(pathToString(t.correctPath));
+  } else if (t.kind === 'simFind') {
+    if (!app.fm || !app.fm.selected) { flashTest('Выделите файл в симуляторе.'); return; }
+    if (app.fm.selected.node.type !== 'file') { flashTest('Нужно выделить файл.'); return; }
+    const full = [...app.fm.cwd, app.fm.selected.name];
+    userAnswer = pathToString(full);
+    ok = full.join('/') === t.targetPath.join('/');
+  }
+
+  t._done = true;
+  if (ok) app.testCorrect++;
+  app.testAnswers.push({ title: t.title, correct: ok, userAnswer, correctAnswer: getCorrectTextTrain(t) });
+
+  const fb = $('testFeedback');
+  fb.classList.remove('hidden', 'ok', 'bad');
+  fb.classList.add(ok ? 'ok' : 'bad');
+  fb.innerHTML = ok
+    ? `✅ Ответ принят. <span class="muted">${esc(t.explain || '')}</span>`
+    : `📌 Ответ принят. <span class="muted">${esc(t.explain || getCorrectTextTrain(t))}</span>`;
+
+  $('btnTestNext').disabled = false;
+  $('btnTestNext').textContent = (app.testIndex === app.testTasks.length - 1) ? 'Завершить тест' : 'Дальше →';
+  $('testBar').style.width = ((app.testIndex + 1) / app.testTasks.length * 100) + '%';
+  fb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function flashTest(msg) {
+  const fb = $('testFeedback');
+  fb.classList.remove('hidden', 'ok', 'bad');
+  fb.classList.add('bad');
+  fb.textContent = msg;
+}
+
+function finishTest() {
+  show('testFinal');
+  const pct = Math.round(app.testCorrect / app.testTasks.length * 100);
+  const passed = pct >= 70;
+  const v = $('testVerdict');
+  v.textContent = passed ? '✅ Зачёт' : '⚠️ Пока не зачёт';
+  v.style.color = passed ? '#157a45' : '#a5281b';
+  $('testFinalMsg').textContent = passed
+    ? 'Вы успешно прошли итоговое тестирование по теме «Файлы и папки».'
+    : 'Рекомендуем пройти тренировку и попробовать тест ещё раз.';
+  saveResult({ mode:'test', score: app.testCorrect, total: app.testTasks.length, pct, passed, answers: app.testAnswers });
+}
+$('btnTestAgain').onclick = () => startTest();
+
+/* ---------- СОХРАНЕНИЕ ---------- */
+function saveResult(extra) {
+  if (!app.studentName || !app.studentTeacherId) return;
+  const all = getResults();
+  all.push({
+    teacherId: app.studentTeacherId,
+    teacherName: app.studentTeacherName || '',
+    name: app.studentName,
+    date: new Date().toISOString(),
+    mode: extra.mode,
+    score: extra.score,
+    total: extra.total,
+    pct: extra.pct,
+    passed: extra.passed || null,
+    answers: extra.answers
+  });
+  saveResults(all);
+}
+
+/* ---------- УЧИТЕЛЬ ---------- */
+$('btnRefresh').onclick = renderTeacher;
+function renderTeacher() {
+  if (!app.teacher) return;
+  const all = getResults();
+  const results = all.filter(r => r.teacherId === app.teacher.id);
+  if (results.length === 0) {
+    $('teacherEmpty').classList.remove('hidden');
+    $('teacherContent').classList.add('hidden');
+    return;
+  }
+  $('teacherEmpty').classList.add('hidden');
+  $('teacherContent').classList.remove('hidden');
+
+  const train = results.filter(r => r.mode === 'train');
+  const test = results.filter(r => r.mode === 'test');
+  const avgAll = Math.round(results.reduce((s,r) => s + (r.pct||0), 0) / results.length);
+  const testPassed = test.filter(r => r.passed).length;
+
+  $('teacherStats').innerHTML = `
+    <div class="stat"><div class="num">${results.length}</div><div class="lbl">Всего работ</div></div>
+    <div class="stat"><div class="num">${train.length}</div><div class="lbl">Тренировок</div></div>
+    <div class="stat"><div class="num">${test.length}</div><div class="lbl">Итоговых тестов</div></div>
+    <div class="stat"><div class="num">${testPassed}</div><div class="lbl">Зачётов по тесту</div></div>
+    <div class="stat"><div class="num">${avgAll}%</div><div class="lbl">Средний результат</div></div>
+  `;
+
+  const tbody = $('teacherTable').querySelector('tbody');
+  tbody.innerHTML = results.slice().reverse().map(r => {
+    const date = new Date(r.date).toLocaleString('ru-RU', { dateStyle:'short', timeStyle:'short' });
+    let resultCell;
+    if (r.mode === 'test') {
+      const cls = r.passed ? 'ok' : 'bad';
+      const label = r.passed ? 'Зачёт' : 'Незачёт';
+      resultCell = `<span class="pill ${cls}">${label}</span> <span class="muted">(${r.score}/${r.total}, ${r.pct}%)</span>`;
+    } else {
+      const cls = r.pct >= 70 ? 'ok' : 'bad';
+      resultCell = `<span class="pill ${cls}">${r.pct}%</span> <span class="muted">(${r.score}/${r.total})</span>`;
+    }
+    return `<tr>
+      <td><b>${esc(r.name)}</b></td>
+      <td>${r.mode === 'test' ? '📝 Тест' : '🎮 Тренировка'}</td>
+      <td>${esc(date)}</td>
+      <td>${resultCell}</td>
+    </tr>`;
+  }).join('');
+}
+
+$('btnClearResults').onclick = () => {
+  if (!app.teacher) return;
+  if (!confirm('Удалить результаты только ВАШИХ учеников?')) return;
+  saveResults(getResults().filter(r => r.teacherId !== app.teacher.id));
+  renderTeacher();
+};
+
+$('btnSandbox').onclick = () => {
+  const host = $('sandbox');
+  host.classList.toggle('hidden');
+  if (!host.classList.contains('hidden')) {
+    const root = generateTree();
+    host.innerHTML = '';
+    const div = document.createElement('div');
+    host.appendChild(div);
+    new FileManager(div, root, { mode: 'manage' });
+  }
+};
+
+show('login');
+</script>
+</body>
+</html>
