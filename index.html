@@ -403,11 +403,17 @@
 const SUPABASE_URL = 'https://uynijkfphmqvfnzxwrrc.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV5bmlqa2ZwaG1xdmZuenh3cnJjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQxNTM0NjksImV4cCI6MjEwOTcyOTQ2OX0.ET6Ews0SAIoM6BtkVK2-NC4QnQCGaMaoRiybkmDb53Y';
 
-// Проверяем, что библиотека загрузилась
-if (!window.supabase) {
-  alert('Не удалось загрузить библиотеку Supabase. Проверьте интернет и перезагрузите страницу.');
-}
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let supabase = null;
+// Ждем полной загрузки страницы, чтобы библиотека Supabase успела подгрузиться (из-за defer)
+window.addEventListener('DOMContentLoaded', () => {
+  if (window.supabase) {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  } else {
+    alert('Не удалось загрузить библиотеку Supabase. Проверьте интернет и перезагрузите страницу.');
+  }
+  // Загружаем список учителей после инициализации
+  refreshTeacherLoginList();
+});
 
 /* ============================================================
    УТИЛИТЫ
@@ -650,7 +656,6 @@ function getTheoryHTML() {
   <div class="theory">
     <p><b>Файлы и папки</b> — это способ хранить информацию на компьютере удобно и упорядоченно.
     Вся информация на диске компьютера хранится в виде <b>файлов</b>, которые лежат в <b>папках</b>.</p>
-
     <h3>1. Файл</h3>
     <p><b>Файл</b> — это поименованная область на диске, в которой хранятся данные (текст, картинка, музыка, программа и т. п.).
     Каждый файл имеет <b>имя</b> и <b>расширение</b>, между ними ставится точка.</p>
@@ -658,7 +663,6 @@ function getTheoryHTML() {
       Пример: <code>Реферат.docx</code><br>
       <code>Реферат</code> — имя файла, <code>.docx</code> — расширение.
     </div>
-
     <h3>2. Расширение и тип файла</h3>
     <p><b>Расширение</b> показывает, какого типа (формата) файл. По расширению программа понимает, чем открыть файл.</p>
     <ul>
@@ -669,7 +673,6 @@ function getTheoryHTML() {
       <li><code>.exe</code> — программы;</li>
       <li><code>.zip</code>, <code>.rar</code> — архивы.</li>
     </ul>
-
     <h3>3. Папка (каталог)</h3>
     <p><b>Папка</b> (каталог) — это «контейнер» для файлов и других папок. Папка нужна для того, чтобы наводить порядок:
     раскладывать файлы по темам, проектам, типам.</p>
@@ -679,7 +682,6 @@ function getTheoryHTML() {
     ├── Реферат.docx
     └── Личное
         └── Письмо.txt</div>
-
     <h3>4. Полный путь к файлу</h3>
     <p><b>Полный путь</b> к файлу — это все папки от корня до файла, записанные через разделитель, и имя файла.
     В Windows разделитель — <b>обратный слэш</b> <code>\\</code>.</p>
@@ -688,7 +690,6 @@ function getTheoryHTML() {
       Пример: <code>Документы\\Личное\\Письмо.txt</code>
     </div>
     <p>Полный путь позволяет <b>однозначно</b> указать, где именно лежит файл, даже если в разных папках есть файлы с одинаковыми именами.</p>
-
     <h3>5. Действия с файлами и папками</h3>
     <ul>
       <li><b>Создать</b> файл или папку;</li>
@@ -699,7 +700,6 @@ function getTheoryHTML() {
       <li><b>Искать</b> по имени;</li>
       <li><b>Свойства</b>: размер, дата создания, тип.</li>
     </ul>
-
     <h3>6. Важные правила</h3>
     <ul>
       <li>В одной папке <b>не может быть</b> двух объектов с одинаковыми именами;</li>
@@ -707,21 +707,11 @@ function getTheoryHTML() {
       <li>Нельзя удалять системные папки и файлы без разрешения;</li>
       <li>Чтобы не запутаться, создавайте папки по темам (например, «Учёба», «Фото», «Игры»).</li>
     </ul>
-
     <h3>7. Как читать путь — пример</h3>
     <div class="example">
       <code>Изображения\\Альбом\\Foto1.jpg</code><br>
       Читаем так: в корне есть папка «Изображения», внутри неё — папка «Альбом», а в ней лежит файл «Foto1.jpg».
     </div>
-
-    <h3>8. Проверь себя</h3>
-    <ul>
-      <li>Что такое файл?</li>
-      <li>Что показывает расширение файла?</li>
-      <li>Что такое папка и зачем она нужна?</li>
-      <li>Что такое полный путь к файлу?</li>
-      <li>Как записывается путь к файлу в Windows?</li>
-    </ul>
   </div>`;
 }
 
@@ -769,11 +759,11 @@ $('modalClose').onclick = () => { $('modal').classList.add('hidden'); $('modalBo
 $('tabStudent').onclick = () => {
   $('tabStudent').classList.add('active'); $('tabTeacher').classList.remove('active');
   $('loginStudent').classList.remove('hidden'); $('loginTeacher').classList.add('hidden');
-  refreshTeacherLoginList();
 };
 $('tabTeacher').onclick = () => {
   $('tabTeacher').classList.add('active'); $('tabStudent').classList.remove('active');
   $('loginTeacher').classList.remove('hidden'); $('loginStudent').classList.add('hidden');
+  // Обновляем список учителей при входе на вкладку
   refreshTeacherLoginList();
 };
 $('tabTeacherLogin').onclick = () => {
@@ -786,27 +776,33 @@ $('tabTeacherReg').onclick = () => {
 };
 
 async function refreshTeacherLoginList() {
+  if (!supabase) return;
   const sel = $('teacherSelect');
   if (!sel) return;
-  const { data: teachers, error } = await supabase.from('teachers').select('id, name, login');
-  if (error) { console.error('Ошибка загрузки учителей:', error); return; }
   
-  sel.innerHTML = '';
-  if (!teachers || teachers.length === 0) {
-    $('noTeachersMsg').style.display = 'block';
-    $('btnStart').disabled = true;
-  } else {
-    $('noTeachersMsg').style.display = 'none';
-    $('btnStart').disabled = false;
-    teachers.forEach(t => {
-      const opt = document.createElement('option');
-      opt.value = t.id;
-      opt.textContent = t.name + (t.login ? ` (${t.login})` : '');
-      sel.appendChild(opt);
-    });
+  try {
+    const { data: teachers, error } = await supabase.from('teachers').select('id, name, login');
+    if (error) throw error;
+    
+    sel.innerHTML = '';
+    if (!teachers || teachers.length === 0) {
+      $('noTeachersMsg').style.display = 'block';
+      $('btnStart').disabled = true;
+    } else {
+      $('noTeachersMsg').style.display = 'none';
+      $('btnStart').disabled = false;
+      teachers.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.id;
+        opt.textContent = t.name + (t.login ? ` (${t.login})` : '');
+        sel.appendChild(opt);
+      });
+    }
+  } catch (e) {
+    console.error('Ошибка загрузки учителей:', e);
+    sel.innerHTML = '<option value="">Ошибка загрузки</option>';
   }
 }
-refreshTeacherLoginList();
 
 /* ---------- ТЕОРИЯ: КНОПКИ ---------- */
 $('btnTheoryFromLogin').onclick = openTheory;
@@ -817,6 +813,7 @@ $('btnTheoryTeacher').onclick = openTheory;
 
 /* ---------- РЕГИСТРАЦИЯ / ВХОД УЧИТЕЛЯ ---------- */
 $('btnTeacherReg').onclick = async () => {
+  if (!supabase) return alert('Нет связи с базой данных.');
   const name = $('rName').value.trim();
   const login = $('rLogin').value.trim().toLowerCase();
   const pass = $('rPass').value;
@@ -826,62 +823,76 @@ $('btnTeacherReg').onclick = async () => {
   if (!/^[a-z0-9_]{3,}$/.test(login)) { $('regErr').textContent = 'Логин: латиница/цифры/подчёркивание, минимум 3 символа.'; return; }
   if (pass.length < 3) { $('regErr').textContent = 'Пароль: минимум 3 символа.'; return; }
 
-  const { error } = await supabase.from('teachers').insert({
-    id: 't_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7),
-    name, login, pass
-  });
+  try {
+    const { error } = await supabase.from('teachers').insert({
+      id: 't_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7),
+      name, login, pass
+    });
 
-  if (error) {
-    $('regErr').textContent = error.message.includes('duplicate')
-      ? 'Такой логин уже занят.' : 'Ошибка базы: ' + error.message;
-    return;
+    if (error) {
+      $('regErr').textContent = error.message.includes('duplicate')
+        ? 'Такой логин уже занят.' : 'Ошибка базы: ' + error.message;
+      return;
+    }
+    $('regOk').textContent = `Аккаунт создан! Войдите с логином «${login}».`;
+    $('rName').value = ''; $('rLogin').value = ''; $('rPass').value = '';
+    refreshTeacherLoginList();
+  } catch (e) {
+    $('regErr').textContent = 'Ошибка сети: ' + e.message;
   }
-  $('regOk').textContent = `Аккаунт создан! Войдите с логином «${login}».`;
-  $('rName').value = ''; $('rLogin').value = ''; $('rPass').value = '';
-  refreshTeacherLoginList();
 };
 
 $('btnTeacherLogin').onclick = async () => {
+  if (!supabase) return alert('Нет связи с базой данных.');
   const login = $('tLogin').value.trim().toLowerCase();
   const pass = $('tPass').value;
   $('loginErrT').textContent = '';
   
-  const { data: t, error } = await supabase.from('teachers')
-    .select('*').eq('login', login).eq('pass', pass).single();
+  try {
+    const { data: t, error } = await supabase.from('teachers')
+      .select('*').eq('login', login).eq('pass', pass).single();
+      
+    if (error || !t) { $('loginErrT').textContent = 'Неверный логин или пароль.'; return; }
     
-  if (error || !t) { $('loginErrT').textContent = 'Неверный логин или пароль.'; return; }
-  
-  app.teacher = t;
-  $('userBadge').classList.remove('hidden');
-  $('userBadge').textContent = '👩‍🏫 ' + t.name;
-  $('teacherWho').textContent = 'Учитель: ' + t.name + ' (логин: ' + t.login + ')';
-  show('teacher');
-  renderTeacher();
+    app.teacher = t;
+    $('userBadge').classList.remove('hidden');
+    $('userBadge').textContent = '👩‍🏫 ' + t.name;
+    $('teacherWho').textContent = 'Учитель: ' + t.name + ' (логин: ' + t.login + ')';
+    show('teacher');
+    renderTeacher();
+  } catch (e) {
+    $('loginErrT').textContent = 'Ошибка сети: ' + e.message;
+  }
 };
 
 /* ---------- ВХОД УЧЕНИКА ---------- */
 $('btnStart').onclick = async () => {
+  if (!supabase) return alert('Нет связи с базой данных.');
   const name = $('studentName').value.trim();
   const teacherId = $('teacherSelect').value;
   
   if (name.length < 2) { $('loginErr').textContent = 'Введите имя (минимум 2 символа).'; return; }
   if (!teacherId) { $('loginErr').textContent = 'Выберите учителя.'; return; }
   
-  const { data: t, error } = await supabase.from('teachers')
-    .select('name').eq('id', teacherId).single();
+  try {
+    const { data: t, error } = await supabase.from('teachers')
+      .select('name').eq('id', teacherId).single();
+      
+    if (error || !t) { $('loginErr').textContent = 'Учитель не найден.'; return; }
     
-  if (error || !t) { $('loginErr').textContent = 'Учитель не найден.'; return; }
-  
-  $('loginErr').textContent = '';
-  app.role = 'student';
-  app.studentName = name;
-  app.studentTeacherId = teacherId;
-  app.studentTeacherName = t.name;
-  
-  $('userBadge').classList.remove('hidden');
-  $('userBadge').textContent = '👨‍🎓 ' + name + ' · учитель: ' + t.name;
-  $('modeHello').textContent = `Привет, ${name}! Твой учитель: ${t.name}.`;
-  show('mode');
+    $('loginErr').textContent = '';
+    app.role = 'student';
+    app.studentName = name;
+    app.studentTeacherId = teacherId;
+    app.studentTeacherName = t.name;
+    
+    $('userBadge').classList.remove('hidden');
+    $('userBadge').textContent = '👨‍🎓 ' + name + ' · учитель: ' + t.name;
+    $('modeHello').textContent = `Привет, ${name}! Твой учитель: ${t.name}.`;
+    show('mode');
+  } catch (e) {
+    $('loginErr').textContent = 'Ошибка сети: ' + e.message;
+  }
 };
 
 $('btnExitMode').onclick = () => location.reload();
@@ -902,7 +913,7 @@ $('btnSandboxStudent').onclick = () => {
   $('modal').classList.remove('hidden');
 };
 
-/* ---------- ТРЕНИРОВКА ---------- */
+/* ---------- ТРЕНИРОВКА (Генератор) ---------- */
 $('btnTrain').onclick = () => startTraining();
 
 function makeTrainingTasks() {
@@ -1449,73 +1460,90 @@ $('btnTestAgain').onclick = () => startTest();
 
 /* ---------- СОХРАНЕНИЕ В SUPABASE ---------- */
 async function saveResult(extra) {
-  if (!app.studentName || !app.studentTeacherId) return;
-  const { error } = await supabase.from('results').insert({
-    teacher_id: app.studentTeacherId,
-    student_name: app.studentName,
-    mode: extra.mode,
-    score: extra.score,
-    total: extra.total,
-    pct: extra.pct,
-    passed: extra.passed || null,
-    answers: extra.answers
-  });
-  if (error) console.error('Ошибка сохранения:', error);
+  if (!supabase || !app.studentName || !app.studentTeacherId) return;
+  try {
+    const { error } = await supabase.from('results').insert({
+      teacher_id: app.studentTeacherId,
+      student_name: app.studentName,
+      mode: extra.mode,
+      score: extra.score,
+      total: extra.total,
+      pct: extra.pct,
+      passed: extra.passed || null,
+      answers: extra.answers
+    });
+    if (error) throw error;
+    console.log('Результат успешно сохранен в базу!');
+  } catch (e) {
+    console.error('Ошибка сохранения:', e);
+    alert('Не удалось сохранить результат. Проверьте интернет.');
+  }
 }
 
 /* ---------- УЧИТЕЛЬ ---------- */
 $('btnRefresh').onclick = renderTeacher;
 async function renderTeacher() {
-  if (!app.teacher) return;
-  const { data: results, error } = await supabase.from('results')
-    .select('*').eq('teacher_id', app.teacher.id).order('created', { ascending: false });
+  if (!supabase || !app.teacher) return;
+  try {
+    const { data: results, error } = await supabase.from('results')
+      .select('*').eq('teacher_id', app.teacher.id).order('created', { ascending: false });
 
-  if (error) { console.error(error); return; }
-  if (!results || results.length === 0) {
-    $('teacherEmpty').classList.remove('hidden');
-    $('teacherContent').classList.add('hidden');
-    return;
-  }
-  $('teacherEmpty').classList.add('hidden');
-  $('teacherContent').classList.remove('hidden');
-
-  const train = results.filter(r => r.mode === 'train');
-  const test  = results.filter(r => r.mode === 'test');
-  const avgAll = Math.round(results.reduce((s,r) => s + (r.pct||0), 0) / results.length);
-  const testPassed = test.filter(r => r.passed).length;
-
-  $('teacherStats').innerHTML = `
-    <div class="stat"><div class="num">${results.length}</div><div class="lbl">Всего работ</div></div>
-    <div class="stat"><div class="num">${train.length}</div><div class="lbl">Тренировок</div></div>
-    <div class="stat"><div class="num">${test.length}</div><div class="lbl">Тестов</div></div>
-    <div class="stat"><div class="num">${testPassed}</div><div class="lbl">Зачётов</div></div>
-    <div class="stat"><div class="num">${avgAll}%</div><div class="lbl">Средний балл</div></div>
-  `;
-
-  $('teacherTable').querySelector('tbody').innerHTML = results.map(r => {
-    const date = new Date(r.created).toLocaleString('ru-RU', { dateStyle:'short', timeStyle:'short' });
-    let resultCell;
-    if (r.mode === 'test') {
-      const cls = r.passed ? 'ok' : 'bad';
-      const label = r.passed ? 'Зачёт' : 'Незачёт';
-      resultCell = `<span class="pill ${cls}">${label}</span> <span class="muted">(${r.score}/${r.total})</span>`;
-    } else {
-      const cls = r.pct >= 70 ? 'ok' : 'bad';
-      resultCell = `<span class="pill ${cls}">${r.pct}%</span> <span class="muted">(${r.score}/${r.total})</span>`;
+    if (error) throw error;
+    
+    if (!results || results.length === 0) {
+      $('teacherEmpty').classList.remove('hidden');
+      $('teacherContent').classList.add('hidden');
+      return;
     }
-    return `<tr>
-      <td><b>${esc(r.student_name)}</b></td>
-      <td>${r.mode === 'test' ? '📝 Тест' : '🎮 Тренировка'}</td>
-      <td>${esc(date)}</td>
-      <td>${resultCell}</td>
-    </tr>`;
-  }).join('');
+    $('teacherEmpty').classList.add('hidden');
+    $('teacherContent').classList.remove('hidden');
+
+    const train = results.filter(r => r.mode === 'train');
+    const test  = results.filter(r => r.mode === 'test');
+    const avgAll = Math.round(results.reduce((s,r) => s + (r.pct||0), 0) / results.length);
+    const testPassed = test.filter(r => r.passed).length;
+
+    $('teacherStats').innerHTML = `
+      <div class="stat"><div class="num">${results.length}</div><div class="lbl">Всего работ</div></div>
+      <div class="stat"><div class="num">${train.length}</div><div class="lbl">Тренировок</div></div>
+      <div class="stat"><div class="num">${test.length}</div><div class="lbl">Тестов</div></div>
+      <div class="stat"><div class="num">${testPassed}</div><div class="lbl">Зачётов</div></div>
+      <div class="stat"><div class="num">${avgAll}%</div><div class="lbl">Средний балл</div></div>
+    `;
+
+    $('teacherTable').querySelector('tbody').innerHTML = results.map(r => {
+      const date = new Date(r.created).toLocaleString('ru-RU', { dateStyle:'short', timeStyle:'short' });
+      let resultCell;
+      if (r.mode === 'test') {
+        const cls = r.passed ? 'ok' : 'bad';
+        const label = r.passed ? 'Зачёт' : 'Незачёт';
+        resultCell = `<span class="pill ${cls}">${label}</span> <span class="muted">(${r.score}/${r.total})</span>`;
+      } else {
+        const cls = r.pct >= 70 ? 'ok' : 'bad';
+        resultCell = `<span class="pill ${cls}">${r.pct}%</span> <span class="muted">(${r.score}/${r.total})</span>`;
+      }
+      return `<tr>
+        <td><b>${esc(r.student_name)}</b></td>
+        <td>${r.mode === 'test' ? '📝 Тест' : '🎮 Тренировка'}</td>
+        <td>${esc(date)}</td>
+        <td>${resultCell}</td>
+      </tr>`;
+    }).join('');
+  } catch (e) {
+    console.error('Ошибка загрузки результатов:', e);
+    alert('Не удалось загрузить результаты: ' + e.message);
+  }
 }
 
 $('btnClearResults').onclick = async () => {
+  if (!supabase || !app.teacher) return;
   if (!confirm('Удалить результаты только ВАШИХ учеников?')) return;
-  await supabase.from('results').delete().eq('teacher_id', app.teacher.id);
-  renderTeacher();
+  try {
+    await supabase.from('results').delete().eq('teacher_id', app.teacher.id);
+    renderTeacher();
+  } catch (e) {
+    alert('Ошибка удаления: ' + e.message);
+  }
 };
 
 $('btnSandbox').onclick = () => {
@@ -1532,5 +1560,4 @@ $('btnSandbox').onclick = () => {
 
 show('login');
 </script>
-</body>
 </html>
